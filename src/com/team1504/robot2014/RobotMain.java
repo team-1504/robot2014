@@ -33,6 +33,7 @@ import java.util.Date;
 public class RobotMain extends SimpleRobot 
 {
     //Drive System
+    private static Mecanum mecanum;
     private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar;
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
     
@@ -122,18 +123,29 @@ public class RobotMain extends SimpleRobot
             if (is_automated)
             {
                 Object[] command_packet = pi.get_packet_in();
-                Mecanum.drive_mecanum( ((Double)command_packet[0]).doubleValue(), ((Double)command_packet[1]).doubleValue(), ((Double)command_packet[2]).doubleValue());
-            }
-            else
-            {
-                Mecanum.drive_mecanum(driver_left_joystick.getX(), driver_left_joystick.getY(), driver_right_joystick.getX());
+                mecanum.drive_mecanum( ((Double)command_packet[0]).doubleValue(), ((Double)command_packet[1]).doubleValue(), ((Double)command_packet[2]).doubleValue());
                 
                 try
                 {
-                    front_left_jaguar.setX(Mecanum.get_front_left());
-                    back_left_jaguar.setX(Mecanum.get_back_left());
-                    back_right_jaguar.setX(Mecanum.get_back_right());
-                    front_right_jaguar.setX(Mecanum.get_front_right());
+                    front_left_jaguar.setX(mecanum.get_front_left());
+                    back_left_jaguar.setX(mecanum.get_back_left());
+                    back_right_jaguar.setX(mecanum.get_back_right());
+                    front_right_jaguar.setX(mecanum.get_front_right());
+                } catch (CANTimeoutException ex)
+                {
+                    ex.printStackTrace();
+                }
+            }
+            else
+            {
+                mecanum.drive_mecanum(driver_left_joystick.getX(), driver_left_joystick.getY(), driver_right_joystick.getX());
+                
+                try
+                {
+                    front_left_jaguar.setX(mecanum.get_front_left());
+                    back_left_jaguar.setX(mecanum.get_back_left());
+                    back_right_jaguar.setX(mecanum.get_back_right());
+                    front_right_jaguar.setX(mecanum.get_front_right());
                 } catch (CANTimeoutException ex)
                 {
                     ex.printStackTrace();
