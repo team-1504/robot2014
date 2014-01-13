@@ -15,39 +15,42 @@ import edu.wpi.first.wpilibj.can.CANTimeoutException;
  */
 public class Mecanum 
 {
-    private static double wheel_front_left, wheel_back_left, wheel_back_right, wheel_front_right;
+    private double[] wheels;                 //0 3
+                                             //1 2
+    private double[] magic_numbers;
 
-    public static void drive_mecanum(double vx, double vy, double w)
+    public Mecanum(double m_fl, double m_bl, double m_br, double m_fr)
     {
-        double[] wheels = new double[4];
-        
-        wheels[0] = vx + vy - w;
-        wheels[1] = vx - vy - w;
-        wheels[2] = vx + vy + w;
-        wheels[3] = vx - vy + w;
-        
-        double max = Math.max(1.0, Math.abs(vx) + Math.abs(vy) + Math.abs(w));
-        
-        wheel_front_left = wheels[0]/max;
-        wheel_back_left = wheels[1]/max;
-        wheel_back_right = wheels[2]/max;
-        wheel_front_right = wheels[3]/max;
+        magic_numbers[0] = m_fl;
+        magic_numbers[1] = m_bl;
+        magic_numbers[2] = m_br;
+        magic_numbers[3] = m_fr;
     }
     
-    public static double get_front_left()
-    {
-        return wheel_front_left;
-    }    
-    public static double get_back_left()
-    {
-        return wheel_back_left;
-    }    
-    public static double get_back_right()
-    {
-        return wheel_back_right;
+    public void drive_mecanum(double forward, double right, double counter_clockwise)
+    {        
+        double max = Math.max(1.0, Math.abs(forward) + Math.abs(right) + Math.abs(counter_clockwise));
+        
+        wheels[0] = magic_numbers[0]*(forward + right - counter_clockwise)/max;
+        wheels[1] = magic_numbers[1]*(forward - right - counter_clockwise)/max;
+        wheels[2] = magic_numbers[2]*(forward + right + counter_clockwise)/max;
+        wheels[3] = magic_numbers[3]*(forward - right + counter_clockwise)/max;
     }
-    public static double get_front_right()
+    
+    public double get_front_left()
     {
-        return wheel_front_right;
+        return wheels[0];
+    }    
+    public double get_back_left()
+    {
+        return wheels[1];
+    }    
+    public double get_back_right()
+    {
+        return wheels[2];
+    }
+    public double get_front_right()
+    {
+        return wheels[3];
     }
 }
