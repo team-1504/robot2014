@@ -21,5 +21,20 @@ public class RobotMap
     public static final int BACK_RIGHT_JAGUAR_PORT = 12;
     public static final int FRONT_RIGHT_JAGUAR_PORT = 13;
     
-    public static final int PHOTON_CANNON_ANGLE_PORT = 0; // TODO:
+    public static final int WINCH_JAGUAR_PORT = 14;    
+    public static final int SHOOTER_RELEASE_SOLENOID_PORT = 0;
+    
+    
+    //Pi Interface Available Ports
+    //
+    public static final int[] RPI_PWM_CHANNELS = {0,1,2,3,4,5,6,7,8};
+    public static final int[] RPI_GPIO_CHANNELS = {0,1,2,3,4,5,6,7,8};
+    
+    public static final int RPI_I2C_ADDRESS = 1;
+    
+    //Automation Controls
+    public static final int AUTOMATION_TOGGLE_BUTTON_PORT = 0;
+    public static final int ZONE_ONE_BUTTON_PORT = 0;
+    public static final int ZONE_TWO_BUTTON_PORT = 0;
+    public static final int ZONE_THREE_BUTTON_PORT = 0;
 }

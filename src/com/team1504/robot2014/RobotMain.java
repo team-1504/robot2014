@@ -9,12 +9,17 @@ package com.team1504.robot2014;
 
 
 import edu.wpi.first.wpilibj.CANJaguar;
+import edu.wpi.first.wpilibj.DigitalModule;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SimpleRobot;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Watchdog;
+import edu.wpi.first.wpilibj.buttons.Button;
+import edu.wpi.first.wpilibj.buttons.DigitalIOButton;
+import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import java.util.Date;
 
@@ -28,13 +33,33 @@ import java.util.Date;
 public class RobotMain extends SimpleRobot 
 {
     //Drive System
-    private static Mecanum mecanum;
-    private static CANJaguar front_left_jag, back_left_jag, back_right_jag, front_right_jag;
+    private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar;
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
+    
+    //Shooter
+    private static CANJaguar shooter_jaguar;
+    private static Solenoid shooter_release_solenoid;
+    private static Shooter shooter;
     
     //Driver Station
     private static DriverStation ds;
     private static DriverStationLCD ds_LCD;
+    
+    //Automation
+    private static Button toggle_automation_button;
+    private static Button zone_one_button;
+    private static Button zone_two_button;
+    private static Button zone_three_button;
+    
+    private static boolean is_automated;
+    private static int zone;
+    
+    private static PiSignaler pi;
+//    private static PiSignalerI2C pi;
+//    private static PiSignalerSerial pi;
+    
+    private static PiComModule pi_module;
+   
     
     //Logging
     private static Date date;
@@ -44,21 +69,33 @@ public class RobotMain extends SimpleRobot
     {
         //Initialization
         try 
-        {
-            front_left_jag = new CANJaguar(RobotMap.FRONT_LEFT_JAGUAR_PORT);
-            back_left_jag = new CANJaguar(RobotMap.BACK_LEFT_JAGUAR_PORT);
-            back_right_jag = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
-            front_right_jag = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
+        {            
+            front_left_jaguar = new CANJaguar(RobotMap.FRONT_LEFT_JAGUAR_PORT);
+            back_left_jaguar = new CANJaguar(RobotMap.BACK_LEFT_JAGUAR_PORT);
+            back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
+            front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
+            
+            shooter_jaguar = new CANJaguar(RobotMap.WINCH_JAGUAR_PORT);
+            shooter_release_solenoid = new Solenoid(RobotMap.SHOOTER_RELEASE_SOLENOID_PORT);
             
             operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
             driver_left_joystick = new Joystick(RobotMap.DRIVER_LEFT_JOYSTICK_PORT);
             driver_right_joystick = new Joystick(RobotMap.DRIVER_RIGHT_JOYSTICK_PORT);
             
-            mecanum = new Mecanum(front_left_jag, back_left_jag, back_right_jag, front_right_jag);
+            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
+            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
+            zone_two_button = new DigitalIOButton(RobotMap.ZONE_TWO_BUTTON_PORT);
+            zone_three_button = new DigitalIOButton(RobotMap.ZONE_THREE_BUTTON_PORT);
+            
+            shooter = new Shooter(shooter_jaguar, shooter_release_solenoid);                        
         } catch (CANTimeoutException ex) 
         {
             ex.printStackTrace();
         }
+        
+        is_automated = false;
+        pi_module = new PiComModule(1, 0, 3, 0, 0, 0, 5, 3, 0);
+        pi = new PiSignaler(pi_module);        
     }
     
     /**
@@ -68,7 +105,7 @@ public class RobotMain extends SimpleRobot
     {
         logging_timer = new Timer();
         logging_timer.start();
-        
+        (new Thread(pi)).start();
     }
 
     /**
@@ -82,7 +119,27 @@ public class RobotMain extends SimpleRobot
         
         while(isOperatorControl() && isEnabled())
         {
-            mecanum.driveMecanum(driver_left_joystick.getX(), driver_left_joystick.getY(), driver_right_joystick.getX());
+            if (is_automated)
+            {
+                Object[] command_packet = pi.get_packet_in();
+                Mecanum.drive_mecanum( ((Double)command_packet[0]).doubleValue(), ((Double)command_packet[1]).doubleValue(), ((Double)command_packet[2]).doubleValue());
+            }
+            else
+            {
+                Mecanum.drive_mecanum(driver_left_joystick.getX(), driver_left_joystick.getY(), driver_right_joystick.getX());
+                
+                try
+                {
+                    front_left_jaguar.setX(Mecanum.get_front_left());
+                    back_left_jaguar.setX(Mecanum.get_back_left());
+                    back_right_jaguar.setX(Mecanum.get_back_right());
+                    front_right_jaguar.setX(Mecanum.get_front_right());
+                } catch (CANTimeoutException ex)
+                {
+                    ex.printStackTrace();
+                }
+            }
+            
         }
     }
     
