@@ -76,7 +76,7 @@ public class RobotMain extends SimpleRobot
             back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
             front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
             
-//            shooter_jaguar = new CANJaguar(RobotMap.WINCH_JAGUAR_PORT);
+            shooter_jaguar = new CANJaguar(RobotMap.WINCH_JAGUAR_PORT);
 //            shooter_release_solenoid = new Solenoid(RobotMap.SHOOTER_RELEASE_SOLENOID_PORT);
             
             operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
@@ -147,6 +147,8 @@ public class RobotMain extends SimpleRobot
                     back_left_jaguar.setX(mecanum.get_back_left());
                     back_right_jaguar.setX(mecanum.get_back_right());
                     front_right_jaguar.setX(mecanum.get_front_right());
+                    
+                    shooter_jaguar.setX(operator_joystick.getY());
                 } catch (CANTimeoutException ex)
                 {
                     ex.printStackTrace();
