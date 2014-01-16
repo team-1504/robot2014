@@ -21,7 +21,7 @@ public class RobotMap
     public static final int BACK_RIGHT_JAGUAR_PORT = 12;
     public static final int FRONT_RIGHT_JAGUAR_PORT = 13;
     
-    public static final int WINCH_JAGUAR_PORT = 14;    
+    public static final int WINCH_JAGUAR_PORT = 20;    
     public static final int SHOOTER_RELEASE_SOLENOID_PORT = 0;
     
     

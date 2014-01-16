@@ -76,27 +76,29 @@ public class RobotMain extends SimpleRobot
             back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
             front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
             
-            shooter_jaguar = new CANJaguar(RobotMap.WINCH_JAGUAR_PORT);
-            shooter_release_solenoid = new Solenoid(RobotMap.SHOOTER_RELEASE_SOLENOID_PORT);
+//            shooter_jaguar = new CANJaguar(RobotMap.WINCH_JAGUAR_PORT);
+//            shooter_release_solenoid = new Solenoid(RobotMap.SHOOTER_RELEASE_SOLENOID_PORT);
             
             operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
             driver_left_joystick = new Joystick(RobotMap.DRIVER_LEFT_JOYSTICK_PORT);
             driver_right_joystick = new Joystick(RobotMap.DRIVER_RIGHT_JOYSTICK_PORT);
             
-            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
-            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
-            zone_two_button = new DigitalIOButton(RobotMap.ZONE_TWO_BUTTON_PORT);
-            zone_three_button = new DigitalIOButton(RobotMap.ZONE_THREE_BUTTON_PORT);
-            
-            shooter = new Shooter(shooter_jaguar, shooter_release_solenoid);                        
+//            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
+//            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
+//            zone_two_button = new DigitalIOButton(RobotMap.ZONE_TWO_BUTTON_PORT);
+//            zone_three_button = new DigitalIOButton(RobotMap.ZONE_THREE_BUTTON_PORT);
+//            
+//            shooter = new Shooter(shooter_jaguar, shooter_release_solenoid);                        
         } catch (CANTimeoutException ex) 
         {
             ex.printStackTrace();
         }
+        mecanum = new Mecanum(1, 1, -1, -1);
+        logging_timer = new Timer();
         
         is_automated = false;
-        pi_module = new PiComModule(1, 0, 3, 0, 0, 0, 5, 3, 0);
-        pi = new PiSignaler(pi_module);        
+//        pi_module = new PiComModule(1, 0, 3, 0, 0, 0, 5, 3, 0);
+//        pi = new PiSignaler(pi_module);        
     }
     
     /**
@@ -104,9 +106,8 @@ public class RobotMain extends SimpleRobot
      */
     public void autonomous() 
     {
-        logging_timer = new Timer();
         logging_timer.start();
-        (new Thread(pi)).start();
+        //(new Thread(pi)).start();
     }
 
     /**
@@ -138,7 +139,7 @@ public class RobotMain extends SimpleRobot
             }
             else
             {
-                mecanum.drive_mecanum(driver_left_joystick.getX(), driver_left_joystick.getY(), driver_right_joystick.getX());
+                mecanum.drive_mecanum(-1*driver_left_joystick.getY(), driver_left_joystick.getX(), driver_right_joystick.getX());
                 
                 try
                 {
