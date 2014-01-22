@@ -20,28 +20,19 @@ public class Mecanum
     private double front_right_val;
     private double back_right_val;
     
-    private double[] magic_numbers;
-    
-    public Mecanum(double fl_mgc, double bl_mgc, double br_mgc, double fr_mgc)       
-    {
-        magic_numbers = new double[4];
-        magic_numbers[0] = fl_mgc;
-        magic_numbers[1] = bl_mgc;
-        magic_numbers[2] = br_mgc;
-        magic_numbers[3] = fr_mgc;
-    }
     public void drive_mecanum(double forward, double right, double counter_clockwise)
     {
         double max = Math.max(1.0, Math.abs(forward) + Math.abs(right) + Math.abs(counter_clockwise));
 //        System.out.println(max);    
         
-        System.out.println(forward + " " + right + " " + counter_clockwise);
+//        System.out.println(forward + " " + right + " " + counter_clockwise);
         
-        front_left_val = ((forward + right - counter_clockwise) * magic_numbers[0] / max);        
-        back_left_val = ((forward - right - counter_clockwise) * magic_numbers[1] / max);
-        back_right_val = ((forward + right + counter_clockwise) * magic_numbers[2] / max);
-        front_right_val = ((forward - right + counter_clockwise) * magic_numbers[3] / max);
+        front_left_val = ((forward + right - counter_clockwise) * RobotMap.FRONT_LEFT_MAGIC_NUMBER / max);        
+        back_left_val = ((forward - right - counter_clockwise) * RobotMap.BACK_LEFT_MAGIC_NUMBER / max);
+        back_right_val = ((forward + right + counter_clockwise) * RobotMap.BACK_RIGHT_MAGIC_NUMBER / max);
+        front_right_val = ((forward - right + counter_clockwise) * RobotMap.FRONT_RIGHT_MAGIC_NUMBER / max);
         
+        System.out.println(front_left_val + " " + back_left_val + " " + back_right_val + " " + front_right_val);
     }
     public double get_front_left()
     {

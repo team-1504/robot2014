@@ -38,9 +38,17 @@ public class RobotMain extends SimpleRobot
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
     
     //Shooter
-    private static CANJaguar shooter_jaguar;
+    private static CANJaguar shooter_jaguar_1;
+    private static CANJaguar shooter_jaguar_2;
     private static Solenoid shooter_release_solenoid;
     private static Shooter shooter;
+    
+    //Thing those Mechanical Guys Wanted
+    private static Button solenoid_button;
+    private static Solenoid extend_solenoid_1;
+    private static Solenoid extend_solenoid_2;
+    private static Solenoid retract_solenoid_1;
+    private static Solenoid retract_solenoid_2;
     
     //Driver Station
     private static DriverStation ds;
@@ -76,12 +84,19 @@ public class RobotMain extends SimpleRobot
             back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
             front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
             
-            shooter_jaguar = new CANJaguar(RobotMap.WINCH_JAGUAR_PORT);
+            shooter_jaguar_1 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_1);
+            shooter_jaguar_2 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_2);
 //            shooter_release_solenoid = new Solenoid(RobotMap.SHOOTER_RELEASE_SOLENOID_PORT);
             
             operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
             driver_left_joystick = new Joystick(RobotMap.DRIVER_LEFT_JOYSTICK_PORT);
             driver_right_joystick = new Joystick(RobotMap.DRIVER_RIGHT_JOYSTICK_PORT);
+            
+            extend_solenoid_1 = new Solenoid(RobotMap.EXTEND_1_PORT);
+            extend_solenoid_2 = new Solenoid(RobotMap.EXTEND_2_PORT);
+            retract_solenoid_1 = new Solenoid(RobotMap.RETRACT_1_PORT);
+            retract_solenoid_2 = new Solenoid(RobotMap.RETRACT_2_PORT);
+                    
             
 //            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
 //            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
@@ -93,7 +108,7 @@ public class RobotMain extends SimpleRobot
         {
             ex.printStackTrace();
         }
-        mecanum = new Mecanum(1, 1, -1, -1);
+        mecanum = new Mecanum();
         logging_timer = new Timer();
         
         is_automated = false;
@@ -125,36 +140,61 @@ public class RobotMain extends SimpleRobot
             {
                 Object[] command_packet = pi.get_packet_in();
                 mecanum.drive_mecanum( ((Double)command_packet[0]).doubleValue(), ((Double)command_packet[1]).doubleValue(), ((Double)command_packet[2]).doubleValue());
-                
-                try
-                {
-                    front_left_jaguar.setX(mecanum.get_front_left());
-                    back_left_jaguar.setX(mecanum.get_back_left());
-                    back_right_jaguar.setX(mecanum.get_back_right());
-                    front_right_jaguar.setX(mecanum.get_front_right());
-                } catch (CANTimeoutException ex)
-                {
-                    ex.printStackTrace();
-                }
             }
             else
             {
                 mecanum.drive_mecanum(-1*driver_left_joystick.getY(), driver_left_joystick.getX(), driver_right_joystick.getX());
-                
-                try
-                {
-                    front_left_jaguar.setX(mecanum.get_front_left());
-                    back_left_jaguar.setX(mecanum.get_back_left());
-                    back_right_jaguar.setX(mecanum.get_back_right());
-                    front_right_jaguar.setX(mecanum.get_front_right());
-                    
-                    shooter_jaguar.setX(operator_joystick.getY());
-                } catch (CANTimeoutException ex)
-                {
-                    ex.printStackTrace();
-                }
             }
             
+            try
+            {
+                front_left_jaguar.setX(mecanum.get_front_left());
+                back_left_jaguar.setX(mecanum.get_back_left());
+                back_right_jaguar.setX(mecanum.get_back_right());
+                front_right_jaguar.setX(mecanum.get_front_right());                
+                
+                double shooter_x;
+                if ( Math.abs(operator_joystick.getY()) < 0.08 )
+                {
+                    shooter_x = 0;
+                }
+                else if (operator_joystick.getTrigger())
+                {
+                    shooter_x = -1*operator_joystick.getY() > 0? 1: -1;
+                }
+                else
+                {
+                    shooter_x = -1*operator_joystick.getY();
+                }
+                shooter_jaguar_1.setX(shooter_x);
+                shooter_jaguar_2.setX(shooter_x);
+                
+                boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
+                if (button_pressed)
+                {
+                    if(!extend_solenoid_1.get())
+                    {
+                        extend_solenoid_1.set(true);
+                        extend_solenoid_2.set(true);
+                        retract_solenoid_1.set(false);
+                        retract_solenoid_2.set(false);
+                    }
+                }
+                else
+                {
+                    if(extend_solenoid_1.get())
+                    {
+                        extend_solenoid_1.set(false);
+                        extend_solenoid_2.set(false);
+                        retract_solenoid_1.set(true);
+                        retract_solenoid_2.set(true);
+                    }
+                }
+            } 
+            catch (CANTimeoutException ex)
+            {
+                ex.printStackTrace();
+            }
         }
     }
     
