@@ -38,10 +38,7 @@ public class RobotMain extends SimpleRobot
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
     
     //Shooter
-    private static CANJaguar shooter_jaguar_1;
-    private static CANJaguar shooter_jaguar_2;
-    private static Solenoid shooter_release_solenoid;
-    private static Shooter shooter;
+    private static Shooter shooter_thread;
     
     //Thing those Mechanical Guys Wanted
     private static Button solenoid_button;
@@ -88,10 +85,6 @@ public class RobotMain extends SimpleRobot
             front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
             pick_up_jaguar = new CANJaguar(RobotMap.PICK_UP_JAGUAR_PORT);
             
-            shooter_jaguar_1 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_1);
-            shooter_jaguar_2 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_2);
-//            shooter_release_solenoid = new Solenoid(RobotMap.SHOOTER_RELEASE_SOLENOID_PORT);
-            
             operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
             driver_left_joystick = new Joystick(RobotMap.DRIVER_LEFT_JOYSTICK_PORT);
             driver_right_joystick = new Joystick(RobotMap.DRIVER_RIGHT_JOYSTICK_PORT);
@@ -115,6 +108,9 @@ public class RobotMain extends SimpleRobot
         mecanum = new Mecanum();
         pick_up = new PickUp();
         logging_timer = new Timer();
+        
+        shooter_thread = new Shooter();
+        shooter_thread.start();
         
         is_automated = false;
 //        pi_module = new PiComModule(1, 0, 3, 0, 0, 0, 5, 3, 0);
@@ -159,21 +155,10 @@ public class RobotMain extends SimpleRobot
                 back_right_jaguar.setX(mecanum.get_back_right());
                 front_right_jaguar.setX(mecanum.get_front_right());                
                 
-                double shooter_x;
-                if ( Math.abs(operator_joystick.getY()) < 0.08 )
+                if (operator_joystick.getTrigger())
                 {
-                    shooter_x = 0;
+                    shooter_thread.fire();
                 }
-                else if (operator_joystick.getTrigger())
-                {
-                    shooter_x = -1*operator_joystick.getY() > 0? 1: -1;
-                }
-                else
-                {
-                    shooter_x = -1*operator_joystick.getY();
-                }
-                shooter_jaguar_1.setX(shooter_x);
-                shooter_jaguar_2.setX(shooter_x);
                 
 //                boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
 //                if (button_pressed)
