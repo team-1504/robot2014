@@ -20,6 +20,7 @@ public class RobotMap
     public static final int BACK_LEFT_JAGUAR_PORT = 11;
     public static final int BACK_RIGHT_JAGUAR_PORT = 12;
     public static final int FRONT_RIGHT_JAGUAR_PORT = 13;
+    public static final int PICK_UP_JAGUAR_PORT = 30;
     
     public static final int EXTEND_1_PORT = 2;
     public static final int EXTEND_2_PORT = 4;
@@ -36,6 +37,11 @@ public class RobotMap
     public static final int SHOOTER_JAGUAR_PORT_1 = 20;
     public static final int SHOOTER_JAGUAR_PORT_2 = 21;
     public static final int SHOOTER_RELEASE_SOLENOID_PORT = 0;
+    
+    public static final int PICK_UP_BUTTON_STOP = 2;
+    public static final int PICK_UP_BUTTON_REVERSE = 3;
+    public static final int PICK_UP_BUTTON_MED = 4;
+    public static final int PICK_UP_BUTTON_MAX = 5;
     
     
     //Pi Interface Available Ports

@@ -34,7 +34,7 @@ public class RobotMain extends SimpleRobot
 {
     //Drive System
     private static Mecanum mecanum;
-    private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar;
+    private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar, pick_up_jaguar; 
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
     
     //Shooter
@@ -53,6 +53,9 @@ public class RobotMain extends SimpleRobot
     //Driver Station
     private static DriverStation ds;
     private static DriverStationLCD ds_LCD;
+    
+    //Solenoid pickup mechanism
+    private static PickUp pick_up;
     
     //Automation
     private static Button toggle_automation_button;
@@ -83,6 +86,7 @@ public class RobotMain extends SimpleRobot
             back_left_jaguar = new CANJaguar(RobotMap.BACK_LEFT_JAGUAR_PORT);
             back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
             front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
+            pick_up_jaguar = new CANJaguar(RobotMap.PICK_UP_JAGUAR_PORT);
             
             shooter_jaguar_1 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_1);
             shooter_jaguar_2 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_2);
@@ -109,6 +113,7 @@ public class RobotMain extends SimpleRobot
             ex.printStackTrace();
         }
         mecanum = new Mecanum();
+        pick_up = new PickUp();
         logging_timer = new Timer();
         
         is_automated = false;
@@ -130,6 +135,7 @@ public class RobotMain extends SimpleRobot
      */
     public void operatorControl() 
     {
+        boolean prev_button_state = false;
         date = new Date();
         logging_timer.reset();
         logging_timer.start();
@@ -169,27 +175,64 @@ public class RobotMain extends SimpleRobot
                 shooter_jaguar_1.setX(shooter_x);
                 shooter_jaguar_2.setX(shooter_x);
                 
-                boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
-                if (button_pressed)
+//                boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
+//                if (button_pressed)
+//                {
+//                    if(!extend_solenoid_1.get())
+//                    {
+//                        extend_solenoid_1.set(true);
+//                        extend_solenoid_2.set(true);
+//                        retract_solenoid_1.set(false);
+//                        retract_solenoid_2.set(false);
+//                    }
+//                }
+//                else
+//                {
+//                    if(extend_solenoid_1.get())
+//                    {
+//                        extend_solenoid_1.set(false);
+//                        extend_solenoid_2.set(false);
+//                        retract_solenoid_1.set(true);
+//                        retract_solenoid_2.set(true);
+//                    }
+//                }
+//            } 
+//            catch (CANTimeoutException ex)
+//            {
+//                ex.printStackTrace();
+//            }
+            
+             boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
+              //the previous state of the position of the button
+                if (prev_button_state)
                 {
-                    if(!extend_solenoid_1.get())
-                    {
-                        extend_solenoid_1.set(true);
-                        extend_solenoid_2.set(true);
-                        retract_solenoid_1.set(false);
-                        retract_solenoid_2.set(false);
-                    }
+                    extend_solenoid_1.set(!extend_solenoid_1.get());  
+                    extend_solenoid_2.set(!extend_solenoid_2.get());
+                    retract_solenoid_1.set(!retract_solenoid_1.get());
+                    retract_solenoid_2.set(!retract_solenoid_2.get());
                 }
-                else
+                prev_button_state = button_pressed;
+                if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_STOP))
                 {
-                    if(extend_solenoid_1.get())
-                    {
-                        extend_solenoid_1.set(false);
-                        extend_solenoid_2.set(false);
-                        retract_solenoid_1.set(true);
-                        retract_solenoid_2.set(true);
-                    }
+                    pick_up.set_state(PickUp.PICK_UP_STOP);
                 }
+                
+                else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_REVERSE))
+                {
+                    pick_up.set_state(PickUp.PICK_UP_REVERSE);
+                }
+                
+                else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MED))
+                {
+                    pick_up.set_state(PickUp.PICK_UP_MED);
+                }
+               
+                else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MAX))
+                {
+                    pick_up.set_state(PickUp.PICK_UP_MAX);
+                }
+                
+                pick_up_jaguar.setX(pick_up.get_jaguar_value());
             } 
             catch (CANTimeoutException ex)
             {
@@ -197,7 +240,6 @@ public class RobotMain extends SimpleRobot
             }
         }
     }
-    
     /**
      * This function is called once each time the robot enters test mode.
      */
