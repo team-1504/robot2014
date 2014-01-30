@@ -140,16 +140,26 @@ public class RobotMain extends SimpleRobot
         logging_timer.reset();
         logging_timer.start();
         
+        double front_angle = 0;
+        
         while(isOperatorControl() && isEnabled())
         {
+            double[] commands = new double[3];
             if (is_automated)
             {
                 Object[] command_packet = pi.get_packet_in();
-                mecanum.drive_mecanum( ((Double)command_packet[0]).doubleValue(), ((Double)command_packet[1]).doubleValue(), ((Double)command_packet[2]).doubleValue());
+                for (int i = 0; i < 3; ++i)
+                {
+                    commands[i] = ((Double)command_packet[i]).doubleValue();
+                }
+                mecanum.drive_mecanum(commands);      
             }
             else
             {
-                mecanum.drive_mecanum(-1*driver_left_joystick.getY(), driver_left_joystick.getX(), driver_right_joystick.getX());
+                commands[0] = -1*driver_left_joystick.getY();
+                commands[1] = driver_left_joystick.getX();
+                commands[2] = driver_right_joystick.getX();
+                mecanum.drive_mecanum(commands);
             }
             
             try
@@ -174,6 +184,12 @@ public class RobotMain extends SimpleRobot
                 }
                 shooter_jaguar_1.setX(shooter_x);
                 shooter_jaguar_2.setX(shooter_x);
+                
+                boolean rotation_button_pressed = driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX);
+                if(driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX))
+                {
+                    front_angle = front_angle == 0.? 180.:0.;                    
+                }
                 
 //                boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
 //                if (button_pressed)
