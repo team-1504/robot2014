@@ -6,8 +6,6 @@
 
 package com.team1504.robot2014;
 
-import edu.wpi.first.wpilibj.CANJaguar;
-import edu.wpi.first.wpilibj.can.CANTimeoutException;
 
 /**
  *
