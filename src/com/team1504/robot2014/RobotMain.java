@@ -38,7 +38,6 @@ public class RobotMain extends SimpleRobot
     private static Mecanum mecanum;
     private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar, pick_up_jaguar; 
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
-    private static Encoder front_left_encoder, back_left_encoder, back_right_encoder, front_right_encoder;
     
     //Shooter
     private static Shooter shooter_thread;
@@ -89,6 +88,23 @@ public class RobotMain extends SimpleRobot
             back_left_jaguar = new CANJaguar(RobotMap.BACK_LEFT_JAGUAR_PORT);
             back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
             front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
+            
+            front_left_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
+            front_left_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            front_left_jaguar.configEncoderCodesPerRev(250);
+            
+            back_left_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
+            back_left_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            back_left_jaguar.configEncoderCodesPerRev(250);
+            
+            back_right_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
+            back_right_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            back_right_jaguar.configEncoderCodesPerRev(250);
+            
+            front_right_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
+            front_right_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            front_right_jaguar.configEncoderCodesPerRev(250);
+            
             pick_up_jaguar = new CANJaguar(RobotMap.PICK_UP_JAGUAR_PORT);
             
             operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
@@ -177,7 +193,11 @@ public class RobotMain extends SimpleRobot
                 
                 if (operator_joystick.getTrigger())
                 {
-                    shooter_thread.fire();
+                    shooter_thread.fire(true);
+                }
+                else
+                {
+                    shooter_thread.fire(false);
                 }
                 
                 boolean rotation_button_pressed = driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX);
@@ -244,13 +264,20 @@ public class RobotMain extends SimpleRobot
                 }
                 
                 pick_up_jaguar.setX(pick_up.get_jaguar_value());
+                
+                
+                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag FL Speed: " + front_left_jaguar.getSpeed());
+                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag BL Speed: " + back_left_jaguar.getSpeed());
+                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag BR Speed: " + back_right_jaguar.getSpeed());
+                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag FR Speed: " + front_right_jaguar.getSpeed());
             } 
             catch (CANTimeoutException ex)
             {
                 ex.printStackTrace();
             }
             
-            ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Wheel Jaguar Speeds: " + front_left_encoder.getRate() + " " + back_left_encoder.getRate() + " " + back_right_encoder.getRate() + " " + front_right_encoder.getRate());
+            
+
         }
     }
     /**

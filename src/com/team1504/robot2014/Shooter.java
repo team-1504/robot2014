@@ -18,8 +18,7 @@ import java.lang.Thread;
 public class Shooter extends Thread
 {
     private static final double DEFAULT_FIRE_DISTANCE = 0;
-    
-    private static final double RAMP_STEP = 0.1;
+    private static final long DEFAULT_RAMP_TIME = 250;
     
     private static boolean is_firing;
     
@@ -52,30 +51,28 @@ public class Shooter extends Thread
         }
     }
     
-    public synchronized void stop_firing()
+    public synchronized void fire(boolean firing)
     {
-        is_firing = false;
-    }
-    
-    public synchronized void fire()
-    {
-        if (is_firing)
+        is_firing = firing;
+        if(!firing)
         {
             return;
         }
-        ramp_and_run();
+        ramp_and_run(DEFAULT_RAMP_TIME);
     }
     
-    public synchronized void ramp_and_run()
+    public synchronized void ramp_and_run(double ramp_time)
     {        
         is_firing = true;
         long last_loop_time = System.currentTimeMillis();
         
-        int value = 0;
+        double value = 0;
         
         while(is_firing)
         {
-            set_shooter_speed((value++)*RAMP_STEP);
+            value += ((double)(System.currentTimeMillis() - last_loop_time)) / ramp_time;
+            last_loop_time = System.currentTimeMillis();
+            set_shooter_speed(value);
         }
     }
     public void run() 
