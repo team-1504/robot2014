@@ -19,15 +19,12 @@ public class Shooter extends Thread
 {
     private static final double DEFAULT_FIRE_DISTANCE = 0;
     
-    private static final double DEFAULT_RAMP_TIME = 0.25;
-    private static final double DEFAULT_TIME_STEP = 0.01;
-    private static final int DEFAULT_RAMP_TYPE = 0;
+    private static final double RAMP_STEP = 0.1;
     
     private static boolean is_firing;
     
     private static CANJaguar shooter_jag_1;
     private static CANJaguar shooter_jag_2;
-    private static Solenoid winch_release;
     
     public Shooter()
     {
@@ -55,42 +52,31 @@ public class Shooter extends Thread
         }
     }
     
+    public synchronized void stop_firing()
+    {
+        is_firing = false;
+    }
+    
     public synchronized void fire()
     {
         if (is_firing)
         {
             return;
         }
-        fire(DEFAULT_RAMP_TIME, DEFAULT_TIME_STEP, DEFAULT_RAMP_TYPE);
+        ramp_and_run();
     }
     
-    public synchronized void fire(double ramp_time, double time_step, int ramp_type)
-    {
-        if (is_firing)
-        {
-            return;
-        }
-        
+    public synchronized void ramp_and_run()
+    {        
         is_firing = true;
-        long start_time = System.currentTimeMillis();
+        long last_loop_time = System.currentTimeMillis();
         
-        final int lps = (int)(1000*time_step);
+        int value = 0;
         
-        double dx = time_step / ramp_time;
-        
-        for (int i = 0; i*dx != 0; ++i)
+        while(is_firing)
         {
-            set_shooter_speed(i*dx);
-            try 
-            {
-                Thread.sleep((start_time + (i+1)*lps) - System.currentTimeMillis());
-            } 
-            catch (InterruptedException ex) 
-            {
-                ex.printStackTrace();
-            }
+            set_shooter_speed((value++)*RAMP_STEP);
         }
-        is_firing = false;
     }
     public void run() 
     {

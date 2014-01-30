@@ -8,10 +8,12 @@
 package com.team1504.robot2014;
 
 
+import com.team1504.HMC5883L_I2C;
 import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.DigitalModule;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Solenoid;
@@ -36,6 +38,7 @@ public class RobotMain extends SimpleRobot
     private static Mecanum mecanum;
     private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar, pick_up_jaguar; 
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
+    private static Encoder front_left_encoder, back_left_encoder, back_right_encoder, front_right_encoder;
     
     //Shooter
     private static Shooter shooter_thread;
@@ -46,6 +49,9 @@ public class RobotMain extends SimpleRobot
     private static Solenoid extend_solenoid_2;
     private static Solenoid retract_solenoid_1;
     private static Solenoid retract_solenoid_2;
+    
+    //Compass
+    private static HMC5883L_I2C compass;
     
     //Driver Station
     private static DriverStation ds;
@@ -94,6 +100,7 @@ public class RobotMain extends SimpleRobot
             retract_solenoid_1 = new Solenoid(RobotMap.RETRACT_1_PORT);
             retract_solenoid_2 = new Solenoid(RobotMap.RETRACT_2_PORT);
                     
+            compass = new HMC5883L_I2C(RobotMap.COMPASS_MODULE_ADDRESS);
             
 //            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
 //            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
@@ -108,6 +115,9 @@ public class RobotMain extends SimpleRobot
         mecanum = new Mecanum();
         pick_up = new PickUp();
         logging_timer = new Timer();
+        
+        ds = DriverStation.getInstance();
+        ds_LCD = DriverStationLCD.getInstance();
         
         shooter_thread = new Shooter();
         shooter_thread.start();
@@ -223,6 +233,8 @@ public class RobotMain extends SimpleRobot
             {
                 ex.printStackTrace();
             }
+            
+            ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Wheel Jaguar Speeds: " + front_left_encoder.getRate() + " " + back_left_encoder.getRate() + " " + back_right_encoder.getRate() + " " + front_right_encoder.getRate());
         }
     }
     /**
