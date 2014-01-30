@@ -29,6 +29,8 @@ public class RobotMap
     
     public static final int SOLENOID_BUTTON_INDEX = 2;
     
+    public static final int ROTATION_BUTTON_INDEX = 45; 
+    
     public static final int FRONT_LEFT_MAGIC_NUMBER = 1;
     public static final int BACK_LEFT_MAGIC_NUMBER = 1;
     public static final int BACK_RIGHT_MAGIC_NUMBER = -1;

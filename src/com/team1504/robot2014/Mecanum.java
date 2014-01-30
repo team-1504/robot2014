@@ -20,12 +20,25 @@ public class Mecanum
     private double front_right_val;
     private double back_right_val;
     
-    public void drive_mecanum(double forward, double right, double counter_clockwise)
+    double rotation_offset;
+        
+    public void front_rotation(double rot_offset)
     {
+       rotation_offset = rot_offset;
+    }
+    
+    public void drive_mecanum(double[] directions)
+    {
+        double forward = directions[0];
+        double right = directions[1];
+        double counter_clockwise = directions[2];
+        
         double max = Math.max(1.0, Math.abs(forward) + Math.abs(right) + Math.abs(counter_clockwise));
 //        System.out.println(max);    
         
 //        System.out.println(forward + " " + right + " " + counter_clockwise);
+        forward = forward * Math.cos(rotation_offset) + right * Math.sin(rotation_offset);
+        right = right * Math.cos(rotation_offset) - forward * Math.sin(rotation_offset);
         
         front_left_val = ((forward + right - counter_clockwise) * RobotMap.FRONT_LEFT_MAGIC_NUMBER / max);        
         back_left_val = ((forward - right - counter_clockwise) * RobotMap.BACK_LEFT_MAGIC_NUMBER / max);
@@ -34,6 +47,7 @@ public class Mecanum
         
         System.out.println(front_left_val + " " + back_left_val + " " + back_right_val + " " + front_right_val);
     }
+
     public double get_front_left()
     {
        return front_left_val;
