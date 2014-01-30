@@ -8,10 +8,12 @@
 package com.team1504.robot2014;
 
 
+import com.team1504.HMC5883L_I2C;
 import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.DigitalModule;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Solenoid;
@@ -36,12 +38,10 @@ public class RobotMain extends SimpleRobot
     private static Mecanum mecanum;
     private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar, pick_up_jaguar; 
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
+    private static Encoder front_left_encoder, back_left_encoder, back_right_encoder, front_right_encoder;
     
     //Shooter
-    private static CANJaguar shooter_jaguar_1;
-    private static CANJaguar shooter_jaguar_2;
-    private static Solenoid shooter_release_solenoid;
-    private static Shooter shooter;
+    private static Shooter shooter_thread;
     
     //Thing those Mechanical Guys Wanted
     private static Button solenoid_button;
@@ -49,6 +49,9 @@ public class RobotMain extends SimpleRobot
     private static Solenoid extend_solenoid_2;
     private static Solenoid retract_solenoid_1;
     private static Solenoid retract_solenoid_2;
+    
+    //Compass
+    private static HMC5883L_I2C compass;
     
     //Driver Station
     private static DriverStation ds;
@@ -88,10 +91,6 @@ public class RobotMain extends SimpleRobot
             front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
             pick_up_jaguar = new CANJaguar(RobotMap.PICK_UP_JAGUAR_PORT);
             
-            shooter_jaguar_1 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_1);
-            shooter_jaguar_2 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_2);
-//            shooter_release_solenoid = new Solenoid(RobotMap.SHOOTER_RELEASE_SOLENOID_PORT);
-            
             operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
             driver_left_joystick = new Joystick(RobotMap.DRIVER_LEFT_JOYSTICK_PORT);
             driver_right_joystick = new Joystick(RobotMap.DRIVER_RIGHT_JOYSTICK_PORT);
@@ -101,6 +100,7 @@ public class RobotMain extends SimpleRobot
             retract_solenoid_1 = new Solenoid(RobotMap.RETRACT_1_PORT);
             retract_solenoid_2 = new Solenoid(RobotMap.RETRACT_2_PORT);
                     
+            compass = new HMC5883L_I2C(RobotMap.COMPASS_MODULE_ADDRESS);
             
 //            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
 //            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
@@ -115,6 +115,12 @@ public class RobotMain extends SimpleRobot
         mecanum = new Mecanum();
         pick_up = new PickUp();
         logging_timer = new Timer();
+        
+        ds = DriverStation.getInstance();
+        ds_LCD = DriverStationLCD.getInstance();
+        
+        shooter_thread = new Shooter();
+        shooter_thread.start();
         
         is_automated = false;
 //        pi_module = new PiComModule(1, 0, 3, 0, 0, 0, 5, 3, 0);
@@ -169,21 +175,10 @@ public class RobotMain extends SimpleRobot
                 back_right_jaguar.setX(mecanum.get_back_right());
                 front_right_jaguar.setX(mecanum.get_front_right());                
                 
-                double shooter_x;
-                if ( Math.abs(operator_joystick.getY()) < 0.08 )
+                if (operator_joystick.getTrigger())
                 {
-                    shooter_x = 0;
+                    shooter_thread.fire();
                 }
-                else if (operator_joystick.getTrigger())
-                {
-                    shooter_x = -1*operator_joystick.getY() > 0? 1: -1;
-                }
-                else
-                {
-                    shooter_x = -1*operator_joystick.getY();
-                }
-                shooter_jaguar_1.setX(shooter_x);
-                shooter_jaguar_2.setX(shooter_x);
                 
                 boolean rotation_button_pressed = driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX);
                 if(driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX))
@@ -254,6 +249,8 @@ public class RobotMain extends SimpleRobot
             {
                 ex.printStackTrace();
             }
+            
+            ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Wheel Jaguar Speeds: " + front_left_encoder.getRate() + " " + back_left_encoder.getRate() + " " + back_right_encoder.getRate() + " " + front_right_encoder.getRate());
         }
     }
     /**

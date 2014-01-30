@@ -45,6 +45,7 @@ public class RobotMap
     public static final int PICK_UP_BUTTON_MED = 4;
     public static final int PICK_UP_BUTTON_MAX = 5;
     
+    public static final int COMPASS_MODULE_ADDRESS = 2;
     
     //Pi Interface Available Ports
     //
