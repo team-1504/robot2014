@@ -136,7 +136,6 @@ public class RobotMain extends SimpleRobot
         ds_LCD = DriverStationLCD.getInstance();
         
         shooter_thread = new Shooter();
-        shooter_thread.start();
         
         is_automated = false;
 //        pi_module = new PiComModule(1, 0, 3, 0, 0, 0, 5, 3, 0);
