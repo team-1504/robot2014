@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
@@ -55,6 +56,9 @@ public class RobotMain extends SimpleRobot
     //Driver Station
     private static DriverStation ds;
     private static DriverStationLCD ds_LCD;
+    
+    //Photon cannony photon_cannon;
+    private static Relay photon_cannon;
     
     //Solenoid pickup mechanism
     private static PickUp pick_up;
@@ -115,6 +119,9 @@ public class RobotMain extends SimpleRobot
             extend_solenoid_2 = new Solenoid(RobotMap.EXTEND_2_PORT);
             retract_solenoid_1 = new Solenoid(RobotMap.RETRACT_1_PORT);
             retract_solenoid_2 = new Solenoid(RobotMap.RETRACT_2_PORT);
+            
+            photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
+            
                     
             compass = new HMC5883L_I2C(RobotMap.COMPASS_MODULE_ADDRESS);
             
@@ -157,6 +164,8 @@ public class RobotMain extends SimpleRobot
     public void operatorControl() 
     {
         boolean prev_button_state = false;
+        boolean prev_photon_button = false;
+        boolean photon_state = false;
         date = new Date();
         logging_timer.reset();
         logging_timer.start();
@@ -202,39 +211,26 @@ public class RobotMain extends SimpleRobot
                 boolean rotation_button_pressed = driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX);
                 if(driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX))
                 {
-                    front_angle = front_angle == 0.? 180.:0.;                    
+                    front_angle = front_angle == 0.? 180.:0.; 
                 }
-                
-//                boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
-//                if (button_pressed)
-//                {
-//                    if(!extend_solenoid_1.get())
-//                    {
-//                        extend_solenoid_1.set(true);
-//                        extend_solenoid_2.set(true);
-//                        retract_solenoid_1.set(false);
-//                        retract_solenoid_2.set(false);
-//                    }
-//                }
-//                else
-//                {
-//                    if(extend_solenoid_1.get())
-//                    {
-//                        extend_solenoid_1.set(false);
-//                        extend_solenoid_2.set(false);
-//                        retract_solenoid_1.set(true);
-//                        retract_solenoid_2.set(true);
-//                    }
-//                }
-//            } 
-//            catch (CANTimeoutException ex)
-//            {
-//                ex.printStackTrace();
-//            }
+                    
+                if (driver_left_joystick.getRawButton(RobotMap.PHOTON_CANNON_PORT) && !prev_photon_button)
+                {                     
+                   photon_state = !photon_state;   
+                   if(photon_state)
+                   {
+                      photon_cannon.set(Relay.Value.kOn);
+                   }
+                   else
+                   {
+                       photon_cannon.set(Relay.Value.kOff);
+                   }
+                }
+                prev_photon_button = driver_left_joystick.getRawButton(RobotMap.PHOTON_CANNON_PORT);
             
              boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
               //the previous state of the position of the button
-                if (prev_button_state)
+                if (!prev_button_state && button_pressed)
                 {
                     extend_solenoid_1.set(!extend_solenoid_1.get());  
                     extend_solenoid_2.set(!extend_solenoid_2.get());
