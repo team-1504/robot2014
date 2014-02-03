@@ -7,8 +7,6 @@
 
 package com.team1504.robot2014;
 
-
-import com.team1504.HMC5883L_I2C;
 import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.DigitalModule;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -49,9 +47,7 @@ public class RobotMain extends SimpleRobot
     private static Solenoid extend_solenoid_2;
     private static Solenoid retract_solenoid_1;
     private static Solenoid retract_solenoid_2;
-    
-    //Compass
-    private static HMC5883L_I2C compass;
+   
     
     //Driver Station
     private static DriverStation ds;
@@ -120,10 +116,8 @@ public class RobotMain extends SimpleRobot
             retract_solenoid_1 = new Solenoid(RobotMap.RETRACT_1_PORT);
             retract_solenoid_2 = new Solenoid(RobotMap.RETRACT_2_PORT);
             
-            photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
+ //           photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
             
-                    
-            compass = new HMC5883L_I2C(RobotMap.COMPASS_MODULE_ADDRESS);
             
 //            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
 //            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
@@ -192,8 +186,17 @@ public class RobotMain extends SimpleRobot
                 mecanum.drive_mecanum(commands);
             }
             
+            double pickup_val = 0;
+            
+            pickup_val = operator_joystick.getY() * -1;
+            if (Math.abs(pickup_val) < 0.1) pickup_val = 0;
+            double throttle = (operator_joystick.getThrottle() + 1)*0.5;
+            pickup_val *= throttle;
+            
             try
             {
+                pick_up_jaguar.setX(pickup_val);
+                
                 front_left_jaguar.setX(mecanum.get_front_left());
                 back_left_jaguar.setX(mecanum.get_back_left());
                 back_right_jaguar.setX(mecanum.get_back_right());
@@ -214,20 +217,20 @@ public class RobotMain extends SimpleRobot
                     front_angle = front_angle == 0.? 180.:0.; 
                 }
                     
-                if (driver_left_joystick.getRawButton(RobotMap.PHOTON_CANNON_PORT) && !prev_photon_button)
-                {                     
-                   photon_state = !photon_state;   
-                   if(photon_state)
-                   {
-                      photon_cannon.set(Relay.Value.kOn);
-                   }
-                   else
-                   {
-                       photon_cannon.set(Relay.Value.kOff);
-                   }
-                }
-                prev_photon_button = driver_left_joystick.getRawButton(RobotMap.PHOTON_CANNON_PORT);
-            
+//                if (driver_left_joystick.getRawButton(RobotMap.PHOTON_CANNON_PORT) && !prev_photon_button)
+//                {                     
+//                   photon_state = !photon_state;   
+//                   if(photon_state)
+//                   {
+//                      photon_cannon.set(Relay.Value.kOn);
+//                   }
+//                   else
+//                   {
+//                       photon_cannon.set(Relay.Value.kOff);
+//                   }
+//                }
+//                prev_photon_button = driver_left_joystick.getRawButton(RobotMap.PHOTON_CANNON_PORT);
+//            
              boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
               //the previous state of the position of the button
                 if (!prev_button_state && button_pressed)
@@ -258,13 +261,15 @@ public class RobotMain extends SimpleRobot
                     pick_up.set_state(PickUp.PICK_UP_MAX);
                 }
                 
-                pick_up_jaguar.setX(pick_up.get_jaguar_value());
+//                pick_up_jaguar.setX(pick_up.get_jaguar_value());
                 
-                
+                ds_LCD.clear();
                 ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag FL Speed: " + front_left_jaguar.getSpeed());
-                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag BL Speed: " + back_left_jaguar.getSpeed());
-                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag BR Speed: " + back_right_jaguar.getSpeed());
-                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag FR Speed: " + front_right_jaguar.getSpeed());
+                ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Jag BL Speed: " + back_left_jaguar.getSpeed());
+                ds_LCD.println(DriverStationLCD.Line.kUser3, 1, "Jag BR Speed: " + back_right_jaguar.getSpeed());
+                ds_LCD.println(DriverStationLCD.Line.kUser4, 1, "Jag FR Speed: " + front_right_jaguar.getSpeed());
+                
+                ds_LCD.updateLCD();
             } 
             catch (CANTimeoutException ex)
             {
