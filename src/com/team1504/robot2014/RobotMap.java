@@ -47,12 +47,12 @@ public class RobotMap
     
     public static final int COMPASS_MODULE_ADDRESS = 2;
     
-    //Pi Interface Available Ports
-    //
-    public static final int[] RPI_PWM_CHANNELS = {0,1,2,3,4,5,6,7,8};
-    public static final int[] RPI_GPIO_CHANNELS = {0,1,2,3,4,5,6,7,8};
+    public static final int PHOTON_CANNON_PORT = 1;
+    public static final int PHOTON_CANNON_TOGGLE_INDEX = 5;
     
-    public static final int RPI_I2C_ADDRESS = 1;
+    public static final String RASPBERRY_PI_IP_ADDRESS = "10.15.4.7";
+    
+    public static final int[] PACKET_FORMAT = {2,2,2};
     
     //Automation Controls
     public static final int AUTOMATION_TOGGLE_BUTTON_PORT = 0;

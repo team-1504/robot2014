@@ -6,11 +6,13 @@
 
 package com.team1504.robot2014;
 
-import edu.wpi.first.wpilibj.Counter;
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DigitalModule;
-import edu.wpi.first.wpilibj.DigitalOutput;
-import edu.wpi.first.wpilibj.Timer;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import javax.microedition.io.Connector;
+import javax.microedition.io.ServerSocketConnection;
+import javax.microedition.io.SocketConnection;
+import javax.microedition.io.StreamConnection;
 
 /**
  *
@@ -21,86 +23,134 @@ import edu.wpi.first.wpilibj.Timer;
  * variables with values read from the pi.
  * 
  */
-public class PiSignaler implements Runnable
+public class PiSignaler
 {
-    private static PiComModule rpi_module;
+    private static Object[] packet_in;
+    private static Object[] packet_out;
     
-    private static volatile Object[] packet_in;
-    private static volatile Object[] packet_out;
+    private static int packet_length;
+    private static int port;
     
-    public void run() 
+    private static boolean is_transmitting;
+    private static boolean is_listening;
+    
+    private PiComModule com_thread;
+    
+    public PiSignaler(int packet_length, int port)
     {
-        while(Thread.currentThread().isAlive())
-        {
-            update_in_packet();
-            
-            for (int i = 0; i < packet_out.length; ++i)
-            {
-                if (i < rpi_module.get_out_I2C_count())
-                {
-                    rpi_module.write_I2C(i, ((Double)packet_out[i]).doubleValue() );
-                }
-                else if (i < rpi_module.get_out_I2C_count() + rpi_module.get_out_PWM_count())
-                {
-                    rpi_module.write_PWM(i - rpi_module.get_out_I2C_count(), ((Integer)packet_out[i]).intValue());
-                }
-                else if (i < rpi_module.get_out_I2C_count() + rpi_module.get_out_PWM_count() + rpi_module.get_out_analog_count())
-                {
-                    rpi_module.write_analog(i - rpi_module.get_out_I2C_count() - rpi_module.get_out_PWM_count(), ((Double)packet_out[i]).doubleValue());
-                }
-                else
-                {
-                    rpi_module.write_digital(rpi_module.get_out_channel_count() - rpi_module.get_out_digital_count() + i, ((Boolean)packet_out[i]).booleanValue());
-                }
-            }                    
-                    
-            try
-            {
-                Thread.currentThread().sleep(25);
-            }
-            catch (InterruptedException e)
-            {
-                Thread.currentThread().interrupt();
-            }
-        }       
+        this.packet_length = packet_length;
+        this.port = port;
+        com_thread = new PiComModule();
     }
     
-    public PiSignaler(PiComModule rpi)
+    public void start()
     {
-        rpi_module = rpi;
-        packet_in = new Object[rpi_module.get_in_channel_count()];
-        packet_out = new Object[rpi_module.get_out_channel_count()];
+        is_listening = true;
+        is_transmitting = true;
+        com_thread.start();
     }
     
-    //return command packet to main thread. 
-    //Double vx, Double vy, Double omega, Double shoot_dist, Double pass_speed, Boolean shoot, Boolean suck, Boolean pass 
-    public void update_in_packet()
-    {        
-        for (int i = 0; i < rpi_module.get_in_I2C_count(); ++i)
-        {
-            packet_in[i] = new Double(0); //TODO: Implement          
-        }
-        for (int p = 0; p < rpi_module.get_in_PWM_count(); ++p)
-        {
-            packet_in[rpi_module.get_in_I2C_count() + p] = new Double(rpi_module.read_PWM(p));
-        }
-        for (int a = 0; a < rpi_module.get_in_analog_count(); ++a)
-        {
-            packet_in[rpi_module.get_in_I2C_count() + rpi_module.get_in_PWM_count() + a] = new Double(rpi_module.read_analog(a));
-        }
-        for (int d = 0; d < rpi_module.get_in_digital_count(); ++d)
-        {
-            packet_in[rpi_module.get_in_I2C_count() + rpi_module.get_in_PWM_count() + rpi_module.get_in_analog_count() + d] = new Boolean(rpi_module.read_digital(d));
-        }        
-    }   
+    public void stop_listening()
+    {
+        is_listening = false;
+    }
     
-    public synchronized Object[] get_packet_in()
+    public void stop_transmitting()
+    {
+        is_transmitting = false;
+    }
+    
+    public Object[] get_packet_in()
     {
         return packet_in;
     }
     
-    public synchronized void update_out_packet(Object[] packet)
+    public void update_out_packet(Object[] packet)
     {
         packet_out = packet;
+    }
+    
+    
+    private class PiComModule extends Thread
+    {
+        private ServerSocketConnection pi_com;
+        private SocketConnection socket;
+        private DataInputStream pi_in;
+        private DataOutputStream pi_out;
+        
+        public PiComModule()
+        {
+            try 
+            {
+                pi_com = (ServerSocketConnection) Connector.open("socket:" + RobotMap.RASPBERRY_PI_IP_ADDRESS + ":" + port);
+                socket = (SocketConnection)pi_com.acceptAndOpen();
+                pi_in = socket.openDataInputStream();
+                pi_out = socket.openDataOutputStream();
+            } 
+            catch (IOException ex) 
+            {
+                ex.printStackTrace();
+            }
+        }
+        
+        public void run()
+        {
+            String in = "";
+            String out = "";
+            
+            if(is_transmitting)
+            {
+                for (int i = 0; i < packet_out.length; ++i)
+                {
+                    if (packet_out[i] instanceof Double)
+                    {
+                        out += ((Double)packet_out[i]).doubleValue();
+                    }
+                    else if (packet_out[i] instanceof Integer)
+                    {
+                        out += ((Integer)packet_out[i]).intValue();
+                    }
+                    else if (packet_out[i] instanceof Boolean)
+                    {
+                        out += ((Boolean)packet_out[i]).booleanValue()? 1: 0;
+                    }
+                    out += " ";
+                }
+                try 
+                {
+                    pi_out.writeUTF(out);
+                } 
+                catch (IOException ex) 
+                {
+                    ex.printStackTrace();
+                }
+            }
+            if(is_listening)
+            {
+                try {
+                    in = pi_in.readUTF();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            String[] in_array = Utils.split(in, ' ');
+            for (int i = 0; i < in_array.length; ++i)
+            {
+                switch(RobotMap.PACKET_FORMAT[i])
+                {
+                    case 0:
+                        packet_in[i] = in_array[i].equals("1")? new Boolean(true): new Boolean(false);
+                        break;
+                    case 1:
+                        packet_in[i] = new Integer(Integer.parseInt(in_array[i]));
+                        break;
+                    case 2:
+                        packet_in[i] = new Double(Double.parseDouble(in_array[i]));
+                        break;
+                    default:
+                        packet_in[i] = in_array[i];
+                }
+            }
+        }
     }
 }

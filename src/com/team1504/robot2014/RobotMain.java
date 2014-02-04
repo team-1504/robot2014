@@ -42,12 +42,13 @@ public class RobotMain extends SimpleRobot
     private static Shooter shooter_thread;
     
     //Thing those Mechanical Guys Wanted
-    private static Button solenoid_button;
     private static Solenoid extend_solenoid_1;
     private static Solenoid extend_solenoid_2;
     private static Solenoid retract_solenoid_1;
     private static Solenoid retract_solenoid_2;
    
+    private static ToggleButton pick_up_sol_toggle;
+    private static ToggleButton photon_cannon_toggle;
     
     //Driver Station
     private static DriverStation ds;
@@ -69,10 +70,6 @@ public class RobotMain extends SimpleRobot
     private static int zone;
     
     private static PiSignaler pi;
-//    private static PiSignalerI2C pi;
-//    private static PiSignalerSerial pi;
-    
-    private static PiComModule pi_module;
    
     
     //Logging
@@ -116,19 +113,22 @@ public class RobotMain extends SimpleRobot
             retract_solenoid_1 = new Solenoid(RobotMap.RETRACT_1_PORT);
             retract_solenoid_2 = new Solenoid(RobotMap.RETRACT_2_PORT);
             
- //           photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
+            photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
             
+            pick_up_sol_toggle = new ToggleButton(operator_joystick, RobotMap.SOLENOID_BUTTON_INDEX);
+            photon_cannon_toggle = new ToggleButton(operator_joystick, RobotMap.PHOTON_CANNON_TOGGLE_INDEX);
             
 //            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
 //            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
 //            zone_two_button = new DigitalIOButton(RobotMap.ZONE_TWO_BUTTON_PORT);
 //            zone_three_button = new DigitalIOButton(RobotMap.ZONE_THREE_BUTTON_PORT);
-//            
-//            shooter = new Shooter(shooter_jaguar, shooter_release_solenoid);                        
-        } catch (CANTimeoutException ex) 
+            
+        } 
+        catch (CANTimeoutException ex) 
         {
             ex.printStackTrace();
         }
+        
         mecanum = new Mecanum();
         pick_up = new PickUp();
         logging_timer = new Timer();
@@ -149,7 +149,6 @@ public class RobotMain extends SimpleRobot
     public void autonomous() 
     {
         logging_timer.start();
-        //(new Thread(pi)).start();
     }
 
     /**
@@ -157,12 +156,12 @@ public class RobotMain extends SimpleRobot
      */
     public void operatorControl() 
     {
-        boolean prev_button_state = false;
-        boolean prev_photon_button = false;
-        boolean photon_state = false;
         date = new Date();
         logging_timer.reset();
         logging_timer.start();
+        
+        boolean photon_cannon_state = false;
+        boolean rotation_button_pressed = false;
         
         double front_angle = 0;
         
@@ -193,6 +192,54 @@ public class RobotMain extends SimpleRobot
             double throttle = (operator_joystick.getThrottle() + 1)*0.5;
             pickup_val *= throttle;
             
+            if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_STOP))
+            {
+                pick_up.set_state(PickUp.PICK_UP_STOP);
+            }
+
+            else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_REVERSE))
+            {
+                pick_up.set_state(PickUp.PICK_UP_REVERSE);
+            }
+
+            else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MED))
+            {
+                pick_up.set_state(PickUp.PICK_UP_MED);
+            }
+
+            else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MAX))
+            {
+                pick_up.set_state(PickUp.PICK_UP_MAX);
+            }
+            
+            if (operator_joystick.getTrigger())
+            {
+                shooter_thread.fire(true);
+            }
+            else
+            {
+                shooter_thread.fire(false);
+            }
+            
+            rotation_button_pressed = driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX);
+            if(driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX))
+            {
+                front_angle = front_angle == 0.? 180.:0.; 
+            }
+
+            if (photon_cannon_toggle.should_toggle())
+            {      
+               photon_cannon_state = !photon_cannon_state;
+               if(photon_cannon_state)
+               {
+                  photon_cannon.set(Relay.Value.kOn);
+               }
+               else
+               {
+                   photon_cannon.set(Relay.Value.kOff);
+               }
+            }
+            
             try
             {
                 pick_up_jaguar.setX(pickup_val);
@@ -200,65 +247,15 @@ public class RobotMain extends SimpleRobot
                 front_left_jaguar.setX(mecanum.get_front_left());
                 back_left_jaguar.setX(mecanum.get_back_left());
                 back_right_jaguar.setX(mecanum.get_back_right());
-                front_right_jaguar.setX(mecanum.get_front_right());                
+                front_right_jaguar.setX(mecanum.get_front_right());
                 
-                if (operator_joystick.getTrigger())
-                {
-                    shooter_thread.fire(true);
-                }
-                else
-                {
-                    shooter_thread.fire(false);
-                }
-                
-                boolean rotation_button_pressed = driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX);
-                if(driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX))
-                {
-                    front_angle = front_angle == 0.? 180.:0.; 
-                }
-                    
-//                if (driver_left_joystick.getRawButton(RobotMap.PHOTON_CANNON_PORT) && !prev_photon_button)
-//                {                     
-//                   photon_state = !photon_state;   
-//                   if(photon_state)
-//                   {
-//                      photon_cannon.set(Relay.Value.kOn);
-//                   }
-//                   else
-//                   {
-//                       photon_cannon.set(Relay.Value.kOff);
-//                   }
-//                }
-//                prev_photon_button = driver_left_joystick.getRawButton(RobotMap.PHOTON_CANNON_PORT);
-//            
-             boolean button_pressed = operator_joystick.getRawButton(RobotMap.SOLENOID_BUTTON_INDEX);
-              //the previous state of the position of the button
-                if (!prev_button_state && button_pressed)
+                //the previous state of the position of the button
+                if (pick_up_sol_toggle.should_toggle())
                 {
                     extend_solenoid_1.set(!extend_solenoid_1.get());  
                     extend_solenoid_2.set(!extend_solenoid_2.get());
                     retract_solenoid_1.set(!retract_solenoid_1.get());
                     retract_solenoid_2.set(!retract_solenoid_2.get());
-                }
-                prev_button_state = button_pressed;
-                if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_STOP))
-                {
-                    pick_up.set_state(PickUp.PICK_UP_STOP);
-                }
-                
-                else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_REVERSE))
-                {
-                    pick_up.set_state(PickUp.PICK_UP_REVERSE);
-                }
-                
-                else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MED))
-                {
-                    pick_up.set_state(PickUp.PICK_UP_MED);
-                }
-               
-                else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MAX))
-                {
-                    pick_up.set_state(PickUp.PICK_UP_MAX);
                 }
                 
 //                pick_up_jaguar.setX(pick_up.get_jaguar_value());

@@ -62,7 +62,7 @@ public class Shooter
             {
                 value += ((double)(System.currentTimeMillis() - last_loop_time)) / ramp_time;
                 last_loop_time = System.currentTimeMillis();
-                set_shooter_speed(value);
+                set_shooter_speed(( value >= 1) ? 1: value );
             }
         }
         
