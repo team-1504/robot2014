@@ -151,6 +151,12 @@ public class RobotMain extends SimpleRobot
         logging_timer.start();
         long start_time = System.currentTimeMillis();
         
+        double[] auton_commands = new double[3];
+        auton_commands[0] = 0.25;
+        auton_commands[1] = 0;
+        auton_commands[2] = 0;
+        
+        
     }
 
     /**
