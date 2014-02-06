@@ -149,6 +149,8 @@ public class RobotMain extends SimpleRobot
     public void autonomous() 
     {
         logging_timer.start();
+        long start_time = System.currentTimeMillis();
+        
     }
 
     /**
