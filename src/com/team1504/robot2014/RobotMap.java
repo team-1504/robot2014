@@ -38,7 +38,8 @@ public class RobotMap
     
     public static final int SHOOTER_JAGUAR_PORT_1 = 20;
     public static final int SHOOTER_JAGUAR_PORT_2 = 21;
-    public static final int SHOOTER_RELEASE_SOLENOID_PORT = 0;
+    public static final int SHOOTER_POT_I2C_ADDRESS = 0;
+    public static final int SHOOTER_POT_MODULE_NUM = 0;
     
     public static final int PICK_UP_BUTTON_STOP = 2;
     public static final int PICK_UP_BUTTON_REVERSE = 3;

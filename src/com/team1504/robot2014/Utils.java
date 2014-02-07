@@ -31,5 +31,13 @@ public class Utils
         }
         return split_string;
     }
-    
+    public static double bytes_to_double(byte[] bytes)
+    {
+        long thing = 0;
+        for (int i = 0; i < 8; ++i)
+        {
+            thing |= ((long) bytes[i] & 0xff) << i * 8;
+        }
+        return Double.longBitsToDouble(thing);
+    }
 }

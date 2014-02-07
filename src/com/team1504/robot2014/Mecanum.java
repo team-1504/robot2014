@@ -21,7 +21,7 @@ public class Mecanum
     private double back_right_val;
     double correct_multiplier;
     double rotation_offset;
-
+    double[] orbit_offset;
     
     public Mecanum()
     {
@@ -34,7 +34,7 @@ public class Mecanum
     
     public void orbit_point(double[] directions, double[] offset)
     {
-        double[] orbit_offset = new double[3];
+        orbit_offset = new double[2];
     }
     
     public double[] detent(double[] directions)
@@ -66,10 +66,9 @@ public class Mecanum
         double max = Math.max(1.0, Math.abs(forward) + Math.abs(right) + Math.abs(ccw));
 //        System.out.println(max);    
         
-//        System.out.println(forward + " " + right + " " + counter_clockwise);
-        double forward_copy = forward;
+        System.out.println(directions[0] + " " + directions[1] + " " + directions[2]);
         
-        directions = front_side(directions, rotation_offset);
+//        directions = front_side(directions, rotation_offset);
         //directions = orbit_point(directions, orbit_offset);
         
         front_left_val = ((forward + right - ccw) * RobotMap.FRONT_LEFT_MAGIC_NUMBER / max);        
@@ -77,7 +76,7 @@ public class Mecanum
         back_right_val = ((forward + right + ccw) * RobotMap.BACK_RIGHT_MAGIC_NUMBER / max);
         front_right_val = ((forward - right + ccw) * RobotMap.FRONT_RIGHT_MAGIC_NUMBER / max);
         
-        System.out.println(front_left_val + " " + back_left_val + " " + back_right_val + " " + front_right_val);
+//        System.out.println(front_left_val + " " + back_left_val + " " + back_right_val + " " + front_right_val);
     }
     
     private double[] detents(double[] dircn)
@@ -104,6 +103,7 @@ public class Mecanum
     private double[] orbit_point(double[] dircn)
     {
         //do the thing guise
+        return dircn;
     }
 
     public double get_front_left()
