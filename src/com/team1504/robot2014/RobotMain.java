@@ -150,12 +150,28 @@ public class RobotMain extends SimpleRobot
     {
         logging_timer.start();
         long start_time = System.currentTimeMillis();
+        double distance = 0;
+        long loop_time = start_time;
+        long last_loop_time = loop_time;
         
         double[] auton_commands = new double[3];
         auton_commands[0] = 0.25;
         auton_commands[1] = 0;
         auton_commands[2] = 0;
-         
+        
+        while (!(Math.abs(System.currentTimeMillis() - 8000) == start_time) && distance < 10)
+        {
+            loop_time = System.currentTimeMillis();
+            double avg_speed = 0;
+            try {
+                avg_speed = (front_left_jaguar.getSpeed() + back_left_jaguar.getSpeed() + front_right_jaguar.getSpeed() + back_right_jaguar.getSpeed())/4;
+            } catch (CANTimeoutException ex) {
+                ex.printStackTrace();
+            }
+            mecanum.drive_mecanum(auton_commands);
+            distance = distance + (avg_speed * (loop_time - last_loop_time));
+            last_loop_time = loop_time;
+        }
         
     }
 
