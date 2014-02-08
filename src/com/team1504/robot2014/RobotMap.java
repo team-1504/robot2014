@@ -45,6 +45,13 @@ public class RobotMap
     public static final int PICK_UP_BUTTON_MED = 4;
     public static final int PICK_UP_BUTTON_MAX = 5;
     
+    public static final int PICK_UP_STOP = 0;
+    public static final int PICK_UP_MAX = 1;
+    public static final int PICK_UP_MED = 2;
+    public static final int PICK_UP_REVERSE = 3;
+    public static final boolean PICK_UP_UP = false;
+    public static final boolean PICK_UP_DOWN = true;
+    
     public static final int COMPASS_MODULE_ADDRESS = 2;
     
     public static final int PHOTON_CANNON_PORT = 1;

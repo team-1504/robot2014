@@ -11,7 +11,7 @@ import com.sun.squawk.util.MathUtils;
 
 /**
  *
- * @author Lexie
+ * @author Eashwar
  */
 public class Mecanum  
 {            
@@ -21,56 +21,34 @@ public class Mecanum
     private double back_right_val;
     double correct_multiplier;
     double rotation_offset;
-
+    double[] orbit_offset = new double[2];
     
     public Mecanum()
     {
         correct_multiplier = 1;
+        
     }
     public void front_rotation(double rot_offset)
     {
-        rotation_offset = rot_offset;
+       rotation_offset = rot_offset*Math.PI/180;
     }
     
-    public void orbit_point(double[] directions, double[] offset)
-    {
-        double[] orbit_offset = new double[3];
-    }
-    
-    public double[] detent(double[] directions)
-    {
-        double theta = MathUtils.atan2(directions[0], directions[1]); //forward is [0]; right is [1]
-        double dx = correct_x(theta) * distance(directions[1], directions[0]) * correct_multiplier;
-        double dy = correct_y(theta) * distance(directions[1], directions[0]) * correct_multiplier;
-        
-        directions[0] = MathUtils.pow(directions[0], 3) + dy;
-        directions[1] = MathUtils.pow(directions[1], 3) + dx;
-        return directions;
-    }
-    
-    private double[] front_side(double[] direct, double rotation_offset)
-    {
-        double[] new_direction = new double[3];
-        new_direction[0] = direct[0] * Math.cos(rotation_offset) + direct[1] * Math.sin(rotation_offset);
-        new_direction[1] = direct[1] * Math.cos(rotation_offset) - direct[0] * Math.sin(rotation_offset);
-        new_direction[2] = direct[2];
-        return new_direction;
-    }
-
     public void drive_mecanum(double[] directions)
     {
         double forward = directions[0];
         double right = directions[1];
         double ccw = directions[2];
-        
+           
         double max = Math.max(1.0, Math.abs(forward) + Math.abs(right) + Math.abs(ccw));
 //        System.out.println(max);    
         
 //        System.out.println(forward + " " + right + " " + counter_clockwise);
-        double forward_copy = forward;
+        directions = detents(directions);
         
-        directions = front_side(directions, rotation_offset);
-        //directions = orbit_point(directions, orbit_offset);
+        directions = front_side(directions);
+        
+        directions = orbit_point(directions);
+        
         
         front_left_val = ((forward + right - ccw) * RobotMap.FRONT_LEFT_MAGIC_NUMBER / max);        
         back_left_val = ((forward - right - ccw) * RobotMap.BACK_LEFT_MAGIC_NUMBER / max);
@@ -80,7 +58,7 @@ public class Mecanum
         System.out.println(front_left_val + " " + back_left_val + " " + back_right_val + " " + front_right_val);
     }
     
-    private double[] detents(double[] dircn)
+    public double[] detents(double[] dircn)
     {
         double theta = MathUtils.atan2(dircn[0], dircn[1]);
         double dx = correct_x(theta) * distance(dircn[1], dircn[0]) * correct_multiplier;
@@ -92,7 +70,7 @@ public class Mecanum
         return dircn;
 
     }
-    private double[] front_side(double[] dircn)
+    public double[] front_side(double[] dircn)
     {
         double[] dir_offset = new double[3];
         dir_offset[0] = dircn[0] * Math.cos(rotation_offset) + dircn[1] * Math.sin(rotation_offset);
@@ -101,7 +79,7 @@ public class Mecanum
         return dir_offset;
     }
     
-    private double[] orbit_point(double[] dircn)
+    public double[] orbit_point(double[] dircn)
     {
         //do the thing guise
     }
