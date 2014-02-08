@@ -35,6 +35,10 @@ public class Shooter
     
     private static ShooterThread sh_thread;
     
+    private static Solenoid solenoid_1 = RobotMain.extend_solenoid_2;
+    private static Solenoid solenoid_2 = RobotMain.retract_solenoid_2;
+    private static boolean solenoid = true;
+    
     public Shooter()
     {
         try {
@@ -48,10 +52,18 @@ public class Shooter
         pot = new I2CPotentiometer(RobotMap.SHOOTER_POT_MODULE_NUM, RobotMap.SHOOTER_POT_I2C_ADDRESS);
         stop_angle = DEFAULT_ANGLE;
         
+        solenoid_set(solenoid);
+        
         is_firing = false;
         
         sh_thread = new ShooterThread();
-        sh_thread.start();
+        sh_thread.start();   
+    }
+    
+    private void solenoid_set(boolean solenoid)
+    {
+        solenoid_1.set(solenoid);
+        solenoid_2.set(!solenoid);
     }
     
     public void fire(boolean firing)
@@ -69,6 +81,8 @@ public class Shooter
 
             while(is_firing && pot.get_angle() < stop_angle)
             {
+                solenoid = false;
+                solenoid_set(solenoid);
                 value += ((double)(System.currentTimeMillis() - last_loop_time)) / ramp_time;
                 last_loop_time = System.currentTimeMillis();
                 set_shooter_speed(( value >= 1) ? 1: value );

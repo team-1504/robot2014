@@ -42,10 +42,10 @@ public class RobotMain extends SimpleRobot
     private static Shooter shooter_thread;
     
     //Thing those Mechanical Guys Wanted
-    private static Solenoid extend_solenoid_1;
-    private static Solenoid extend_solenoid_2;
-    private static Solenoid retract_solenoid_1;
-    private static Solenoid retract_solenoid_2;
+    public static Solenoid extend_solenoid_1;
+    public static Solenoid extend_solenoid_2;
+    public static Solenoid retract_solenoid_1;
+    public static Solenoid retract_solenoid_2;
    
     private static ToggleButton pick_up_sol_toggle;
     private static ToggleButton photon_cannon_toggle;
@@ -148,14 +148,53 @@ public class RobotMain extends SimpleRobot
      */
     public void autonomous() 
     {
+        
         logging_timer.start();
         long start_time = System.currentTimeMillis();
+        double distance = 0;
+        long loop_time = start_time;
+        long last_loop_time = loop_time;
+        
+        pick_up.set_position(RobotMap.PICK_UP_DOWN);
+        extend_solenoid_1.set(pick_up.get_position());
+        retract_solenoid_1.set(!pick_up.get_position());
         
         double[] auton_commands = new double[3];
-        auton_commands[0] = 0.25;
+        auton_commands[0] = 0.3;
         auton_commands[1] = 0;
         auton_commands[2] = 0;
-         
+        
+        double auton_offset = 180;
+        mecanum.front_rotation(auton_offset);
+        auton_commands = mecanum.front_side(auton_commands);
+        
+        
+        while ((Math.abs(System.currentTimeMillis() - 8000) <= start_time) || distance >= 10)
+        {
+            loop_time = System.currentTimeMillis();
+            
+            mecanum.drive_mecanum(auton_commands);
+           
+            try
+            {
+                front_left_jaguar.setX(mecanum.get_front_left());
+                back_left_jaguar.setX(mecanum.get_back_left());
+                back_right_jaguar.setX(mecanum.get_back_right());
+                front_right_jaguar.setX(mecanum.get_front_right());
+            } catch (CANTimeoutException ex){
+              ex.printStackTrace();
+            }
+            
+            double avg_speed = 0;
+            try {
+                avg_speed = (front_left_jaguar.getSpeed() + back_left_jaguar.getSpeed() + front_right_jaguar.getSpeed() + back_right_jaguar.getSpeed())/4;
+            } catch (CANTimeoutException ex) {
+                ex.printStackTrace();
+            }
+            double speed_fpms = avg_speed*2.094/60000; //8" diameter on wheel means 8pi inches per revolution,divided by 12 is in ft,  min to ms is 60000
+            distance = distance + (speed_fpms * (loop_time - last_loop_time));
+            last_loop_time = loop_time;
+        }
         
     }
 
@@ -191,6 +230,7 @@ public class RobotMain extends SimpleRobot
                 commands[1] = driver_left_joystick.getX();
                 commands[2] = driver_right_joystick.getX();
                 mecanum.drive_mecanum(commands);
+                
             }
             
             double pickup_val = 0;
@@ -202,22 +242,22 @@ public class RobotMain extends SimpleRobot
             
             if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_STOP))
             {
-                pick_up.set_state(PickUp.PICK_UP_STOP);
+                pick_up.set_speed(RobotMap.PICK_UP_STOP);
             }
 
             else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_REVERSE))
             {
-                pick_up.set_state(PickUp.PICK_UP_REVERSE);
+                pick_up.set_speed(RobotMap.PICK_UP_REVERSE);
             }
 
             else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MED))
             {
-                pick_up.set_state(PickUp.PICK_UP_MED);
+                pick_up.set_speed(RobotMap.PICK_UP_MED);
             }
 
             else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MAX))
             {
-                pick_up.set_state(PickUp.PICK_UP_MAX);
+                pick_up.set_speed(RobotMap.PICK_UP_MAX);
             }
             
             if (operator_joystick.getTrigger())
@@ -260,10 +300,9 @@ public class RobotMain extends SimpleRobot
                 //the previous state of the position of the button
                 if (pick_up_sol_toggle.should_toggle())
                 {
-                    extend_solenoid_1.set(!extend_solenoid_1.get());  
-                    extend_solenoid_2.set(!extend_solenoid_2.get());
-                    retract_solenoid_1.set(!retract_solenoid_1.get());
-                    retract_solenoid_2.set(!retract_solenoid_2.get());
+                     extend_solenoid_1.set(pick_up.get_position());
+                     retract_solenoid_1.set(!pick_up.get_position());
+
                 }
                 
 //                pick_up_jaguar.setX(pick_up.get_jaguar_value());
