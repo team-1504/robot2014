@@ -108,14 +108,14 @@ public class RobotMain extends SimpleRobot
             driver_left_joystick = new Joystick(RobotMap.DRIVER_LEFT_JOYSTICK_PORT);
             driver_right_joystick = new Joystick(RobotMap.DRIVER_RIGHT_JOYSTICK_PORT);
             
-            extend_solenoid_1 = new Solenoid(RobotMap.EXTEND_1_PORT);
-            extend_solenoid_2 = new Solenoid(RobotMap.EXTEND_2_PORT);
-            retract_solenoid_1 = new Solenoid(RobotMap.RETRACT_1_PORT);
-            retract_solenoid_2 = new Solenoid(RobotMap.RETRACT_2_PORT);
+            extend_solenoid_1 = new Solenoid(RobotMap.PICKUP_EXTEND_1_PORT);
+            extend_solenoid_2 = new Solenoid(RobotMap.PICKUP_EXTEND_2_PORT);
+            retract_solenoid_1 = new Solenoid(RobotMap.PICKUP_RETRACT_1_PORT);
+            retract_solenoid_2 = new Solenoid(RobotMap.PICKUP_RETRACT_2_PORT);
             
             photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
             
-            pick_up_sol_toggle = new ToggleButton(operator_joystick, RobotMap.SOLENOID_BUTTON_INDEX);
+            pick_up_sol_toggle = new ToggleButton(operator_joystick, RobotMap.PICKUP_SOLENOID_BUTTON_INDEX);
             photon_cannon_toggle = new ToggleButton(operator_joystick, RobotMap.PHOTON_CANNON_TOGGLE_INDEX);
             
 //            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
@@ -165,7 +165,7 @@ public class RobotMain extends SimpleRobot
         auton_commands[2] = 0;
         
         double auton_offset = 180;
-        mecanum.front_rotation(auton_offset);
+        mecanum.set_front(auton_offset);
         auton_commands = mecanum.front_side(auton_commands);
         
         
