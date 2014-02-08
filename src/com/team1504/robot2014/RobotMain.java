@@ -42,10 +42,10 @@ public class RobotMain extends SimpleRobot
     private static Shooter shooter_thread;
     
     //Thing those Mechanical Guys Wanted
-    private static Solenoid extend_solenoid_1;
-    private static Solenoid extend_solenoid_2;
-    private static Solenoid retract_solenoid_1;
-    private static Solenoid retract_solenoid_2;
+    public static Solenoid extend_solenoid_1;
+    public static Solenoid extend_solenoid_2;
+    public static Solenoid retract_solenoid_1;
+    public static Solenoid retract_solenoid_2;
    
     private static ToggleButton pick_up_sol_toggle;
     private static ToggleButton photon_cannon_toggle;

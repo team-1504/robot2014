@@ -19,6 +19,7 @@ public class Shooter
 {
     private static final double DEFAULT_FIRE_DISTANCE = 0;
     private static final long DEFAULT_RAMP_TIME = 250;
+        
     
     private static boolean is_firing;
     
@@ -28,6 +29,10 @@ public class Shooter
     private static CANJaguar shooter_jag_2;
     
     private static ShooterThread sh_thread;
+    
+    private static Solenoid solenoid_1 = RobotMain.extend_solenoid_2;
+    private static Solenoid solenoid_2 = RobotMain.retract_solenoid_2;
+    private static boolean solenoid = true;
     
     public Shooter()
     {
@@ -39,10 +44,19 @@ public class Shooter
         {
             ex.printStackTrace();
         }
+        
+        solenoid_set(solenoid);
+        
         is_firing = false;
         
         sh_thread = new ShooterThread();
-        sh_thread.start();
+        sh_thread.start();   
+    }
+    
+    private void solenoid_set(boolean solenoid)
+    {
+        solenoid_1.set(solenoid);
+        solenoid_2.set(!solenoid);
     }
     
     public void fire(boolean firing)
@@ -60,6 +74,8 @@ public class Shooter
 
             while(is_firing)
             {
+                solenoid = false;
+                solenoid_set(solenoid);
                 value += ((double)(System.currentTimeMillis() - last_loop_time)) / ramp_time;
                 last_loop_time = System.currentTimeMillis();
                 set_shooter_speed(( value >= 1) ? 1: value );
