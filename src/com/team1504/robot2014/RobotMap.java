@@ -20,14 +20,15 @@ public class RobotMap
     public static final int BACK_LEFT_JAGUAR_PORT = 11;
     public static final int BACK_RIGHT_JAGUAR_PORT = 12;
     public static final int FRONT_RIGHT_JAGUAR_PORT = 13;
+    
     public static final int PICK_UP_JAGUAR_PORT = 20;
     
-    public static final int EXTEND_1_PORT = 2;
-    public static final int EXTEND_2_PORT = 4;
-    public static final int RETRACT_1_PORT = 1;
-    public static final int RETRACT_2_PORT = 3;
+    public static final int PICKUP_EXTEND_1_PORT = 2;
+    public static final int PICKUP_EXTEND_2_PORT = 4;
+    public static final int PICKUP_RETRACT_1_PORT = 1;
+    public static final int PICKUP_RETRACT_2_PORT = 3;
     
-    public static final int SOLENOID_BUTTON_INDEX = 2;
+    public static final int PICKUP_SOLENOID_BUTTON_INDEX = 2;
     
     public static final int ROTATION_BUTTON_INDEX = 45; 
     
