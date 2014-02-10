@@ -36,11 +36,11 @@ public class ComModule
     
     private PiComModule com_thread;
     
-    public ComModule(int packet_length, int port)
+    public ComModule(String address, int packet_in_length, int port)
     {
-        this.packet_in_length = packet_length;
+        this.packet_in_length = packet_in_length;
         this.port = port;
-        com_thread = new PiComModule();
+        com_thread = new PiComModule(address);
     }
     
     public void start()
@@ -86,13 +86,13 @@ public class ComModule
         private DataInputStream pi_in;
         private DataOutputStream pi_out;
         
-        public PiComModule()
+        public PiComModule(String address)
         {
             ServerSocketConnection pi_com;
             SocketConnection pi_socket;
             try 
             {
-                pi_com = (ServerSocketConnection) Connector.open("socket:" + RobotMap.RASPBERRY_PI_IP_ADDRESS + ":" + port);
+                pi_com = (ServerSocketConnection) Connector.open("socket:" + address + ":" + port);
                 pi_socket = (SocketConnection)pi_com.acceptAndOpen();
                 pi_in = pi_socket.openDataInputStream();
                 pi_out = pi_socket.openDataOutputStream();
@@ -117,14 +117,20 @@ public class ComModule
                     {
                         val = new char[8];
                         long lng = Double.doubleToLongBits(((Double)packet_out[i]).doubleValue());
-                        for (int j = 0; j < 8; ++j) val[j] = (char)((lng >> ((7 - j) * 8)) & 0xff);
+                        for (int j = 0; j < 8; ++j) 
+                        {
+                            val[j] = (char)((lng >> ((7 - j) * 8)) & 0xff);
+                        }
                         out += val;
                     }
                     else if (packet_out[i] instanceof Integer)
                     {
                         val = new char[4];
                         int igr = ((Integer)packet_out[i]).intValue();
-                        for (int j = 0; j < 4; ++j) val[j] = (char)((igr >> ((3 - j) * 8)) & 0xff);
+                        for (int j = 0; j < 4; ++j) 
+                        {
+                            val[j] = (char)((igr >> ((3 - j) * 8)) & 0xff);
+                        }
                         out += val;
                     }
                     else if (packet_out[i] instanceof Boolean)
@@ -166,13 +172,13 @@ public class ComModule
                         ++i;
                         break;
                     case 1:
-                        int t = 0;
+                        int integer = 0;
                         for (int j = 0; j < 4; ++j) 
                         {
-                            t |= in.charAt(i + j);
-                            t = t << 8;
+                            integer |= in.charAt(i + j);
+                            integer = integer << 8;
                         }
-                        packet_in[i] = new Integer(t);
+                        packet_in[i] = new Integer(integer);
                         i += 4;
                         break;
                     case 2:

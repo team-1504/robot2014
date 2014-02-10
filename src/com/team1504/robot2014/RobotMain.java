@@ -58,6 +58,7 @@ public class RobotMain extends SimpleRobot
     
     //Logging
     private static Logger logger;
+    long start_time;
     
     //Driver Station
     private static DriverStation ds;
@@ -74,24 +75,27 @@ public class RobotMain extends SimpleRobot
             
             
             front_left_jaguar = new CANJaguar(RobotMap.FRONT_LEFT_JAGUAR_PORT);
-            back_left_jaguar = new CANJaguar(RobotMap.BACK_LEFT_JAGUAR_PORT);
-            back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
-            front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
-            
             front_left_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
             front_left_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            front_left_jaguar.setPositionReference(CANJaguar.PositionReference.kQuadEncoder);
             front_left_jaguar.configEncoderCodesPerRev(250);
             
+            back_left_jaguar = new CANJaguar(RobotMap.BACK_LEFT_JAGUAR_PORT);
             back_left_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
             back_left_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            back_left_jaguar.setPositionReference(CANJaguar.PositionReference.kQuadEncoder);
             back_left_jaguar.configEncoderCodesPerRev(250);
             
+            back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
             back_right_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
             back_right_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            back_right_jaguar.setPositionReference(CANJaguar.PositionReference.kQuadEncoder);
             back_right_jaguar.configEncoderCodesPerRev(250);
             
+            front_right_jaguar = new CANJaguar(RobotMap.FRONT_RIGHT_JAGUAR_PORT);
             front_right_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
             front_right_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            front_right_jaguar.setPositionReference(CANJaguar.PositionReference.kQuadEncoder);
             front_right_jaguar.configEncoderCodesPerRev(250);
             
             
@@ -117,6 +121,9 @@ public class RobotMain extends SimpleRobot
             ex.printStackTrace();
         }
         
+        pi = new ComModule(RobotMap.RASPBERRY_PI_IP_ADDRESS, 1, 1504);
+        pi.start();
+        
         mecanum = new Mecanum();
         pick_up = new PickUp();
         shooter = new Shooter();
@@ -135,7 +142,7 @@ public class RobotMain extends SimpleRobot
      */
     public void autonomous() 
     {
-        long start_time = System.currentTimeMillis();
+        start_time = System.currentTimeMillis();
         double distance = 0;
         long loop_time = start_time;
         long last_loop_time = loop_time;
@@ -156,9 +163,14 @@ public class RobotMain extends SimpleRobot
         auton_commands = mecanum.front_side(auton_commands);
         
         
-        while ( ((Math.abs(System.currentTimeMillis() - 8000) <= start_time) || distance >= 10) && isAutonomous() && isEnabled())
+        while ( ((Math.abs(System.currentTimeMillis() - 8000) <= start_time) && distance <= 10) && isAutonomous() && isEnabled())
         {
-            loop_time = System.currentTimeMillis();
+            try {
+                distance = (front_left_jaguar.getPosition() + back_left_jaguar.getPosition() + back_right_jaguar.getPosition() + front_right_jaguar.getPosition()) / 4.0;
+            } catch (CANTimeoutException ex) {
+                ex.printStackTrace();
+            }
+            distance = 0.106103295 * distance;
             
             mecanum.drive_mecanum(auton_commands);
            
@@ -173,16 +185,6 @@ public class RobotMain extends SimpleRobot
             {
               ex.printStackTrace();
             }
-            
-            double avg_speed = 0;
-            try {
-                avg_speed = (front_left_jaguar.getSpeed() + back_left_jaguar.getSpeed() + front_right_jaguar.getSpeed() + back_right_jaguar.getSpeed())/4;
-            } catch (CANTimeoutException ex) {
-                ex.printStackTrace();
-            }
-            double speed_fpms = avg_speed*2.094/60000; //8" diameter on wheel means 8pi inches per revolution,divided by 12 is in ft,  min to ms is 60000
-            distance = distance + (speed_fpms * (loop_time - last_loop_time));
-            last_loop_time = loop_time;
         }
         
     }
@@ -199,6 +201,12 @@ public class RobotMain extends SimpleRobot
         
         while(isOperatorControl() && isEnabled())
         {
+            //Com Debugging
+            Object[] packet = new Object[1];
+            packet[0] = new Long(System.currentTimeMillis() - start_time);
+            
+            pi.update_out_packet(packet);
+            
             //Pickup Debugging
             double pickup_val = 0;
             

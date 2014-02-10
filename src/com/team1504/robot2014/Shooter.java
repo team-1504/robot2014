@@ -45,6 +45,9 @@ public class Shooter
         {
             shooter_jag_1 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_1);
             shooter_jag_2 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_2);
+            
+            shooter_jag_1.setPositionReference(CANJaguar.PositionReference.kPotentiometer);
+            shooter_jag_1.configPotentiometerTurns(2);
         }
         catch (CANTimeoutException ex)
         {
@@ -92,8 +95,15 @@ public class Shooter
         
         private double get_angle()
         {
-            double volts = ((pot.getLSBWeight() * 1e-9) * pot.getVoltage()) - (pot.getOffset() * 1e-9);
-            return (volts + 10) * (POT_RANGE / 20.);
+//            double volts = ((pot.getLSBWeight() * 1e-9) * pot.getVoltage()) - (pot.getOffset() * 1e-9);
+//            return (volts + 10) * (POT_RANGE / 20.);
+            double pos = 0;
+            try {
+                pos = shooter_jag_1.getPosition();
+            } catch (CANTimeoutException ex) {
+                ex.printStackTrace();
+            }
+            return pos;
         }
         
         private void set_shooter_speed(double speed)
