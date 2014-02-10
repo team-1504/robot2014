@@ -112,19 +112,27 @@ public class ComModule
             {
                 for (int i = 0; i < packet_out.length; ++i)
                 {
+                    char[] val;
                     if (packet_out[i] instanceof Double)
                     {
-                        out += ((Double)packet_out[i]).doubleValue();
+                        val = new char[8];
+                        long lng = Double.doubleToLongBits(((Double)packet_out[i]).doubleValue());
+                        for (int j = 0; j < 8; ++j) val[j] = (char)((lng >> ((7 - j) * 8)) & 0xff);
+                        out += val;
                     }
                     else if (packet_out[i] instanceof Integer)
                     {
-                        out += ((Integer)packet_out[i]).intValue();
+                        val = new char[4];
+                        int igr = ((Integer)packet_out[i]).intValue();
+                        for (int j = 0; j < 4; ++j) val[j] = (char)((igr >> ((3 - j) * 8)) & 0xff);
+                        out += val;
                     }
                     else if (packet_out[i] instanceof Boolean)
                     {
-                        out += ((Boolean)packet_out[i]).booleanValue()? 1: 0;
+                        val = new char[1];
+                        val[0] = (char)(((Boolean)packet_out[i]).booleanValue()? 1: 0);
+                        out += val;
                     }
-                    out += " ";
                 }
                 try 
                 {
@@ -146,23 +154,51 @@ public class ComModule
                     ex.printStackTrace();
                 }
             }
-            String[] in_array = Utils.split(in, ' ');
             Object[] packet_in = new Object[packet_in_length];
-            for (int i = 0; i < in_array.length; ++i)
+            for (int i = 0; i < in.length();)
             {
                 switch(RobotMap.PACKET_FORMAT[i])
                 {
                     case 0:
-                        packet_in[i] = in_array[i].equals("1")? new Boolean(true): new Boolean(false);
+                        boolean n;
+                        n = in.charAt(i) == 0? false: true;
+                        packet_in[i] = new Boolean(n);
+                        ++i;
                         break;
                     case 1:
-                        packet_in[i] = new Integer(Integer.parseInt(in_array[i]));
+                        int t = 0;
+                        for (int j = 0; j < 4; ++j) 
+                        {
+                            t |= in.charAt(i + j);
+                            t = t << 8;
+                        }
+                        packet_in[i] = new Integer(t);
+                        i += 4;
                         break;
                     case 2:
-                        packet_in[i] = new Double(Double.parseDouble(in_array[i]));
+                        long lng = 0;
+                        for (int j = 0; j < 8; ++j)
+                        {
+                            lng |= in.charAt(i + j);
+                            lng = lng << 8;
+                        }
+                        packet_in[i] = new Long(lng);
+                        i += 8;
+                        break;
+                    case 3:
+                        double doub = 0;
+                        long l = 0;
+                        for (int j = 0; j < 8; ++j)
+                        {
+                            l |= in.charAt(i + j);
+                            l = l << 8;
+                        }
+                        doub = Double.longBitsToDouble(l);
+                        packet_in[i] = new Double(doub);
+                        i += 8;
                         break;
                     default:
-                        packet_in[i] = in_array[i];
+                        break;
                 }
             }
             
