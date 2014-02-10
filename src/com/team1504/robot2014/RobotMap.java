@@ -39,7 +39,6 @@ public class RobotMap
     
     public static final int SHOOTER_JAGUAR_PORT_1 = 20;
     public static final int SHOOTER_JAGUAR_PORT_2 = 21;
-    public static final int SHOOTER_POT_I2C_ADDRESS = 0;
     public static final int SHOOTER_POT_MODULE_NUM = 0;
     
     public static final int PICK_UP_BUTTON_STOP = 2;
@@ -51,6 +50,7 @@ public class RobotMap
     public static final int PICK_UP_MAX = 1;
     public static final int PICK_UP_MED = 2;
     public static final int PICK_UP_REVERSE = 3;
+    
     public static final boolean PICK_UP_UP = false;
     public static final boolean PICK_UP_DOWN = true;
     
@@ -61,7 +61,7 @@ public class RobotMap
     
     public static final String RASPBERRY_PI_IP_ADDRESS = "10.15.4.7";
     
-    public static final int[] PACKET_FORMAT = {2,2,2};
+    public static final int[] PACKET_FORMAT = {1,2,2,2}; //Timestamp(long/int), Delta_x, Delta_y, Delta_theta
     
     //Automation Controls
     public static final int AUTOMATION_TOGGLE_BUTTON_PORT = 0;

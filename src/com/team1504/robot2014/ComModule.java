@@ -9,10 +9,10 @@ package com.team1504.robot2014;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Vector;
 import javax.microedition.io.Connector;
 import javax.microedition.io.ServerSocketConnection;
 import javax.microedition.io.SocketConnection;
-import javax.microedition.io.StreamConnection;
 
 /**
  *
@@ -23,12 +23,12 @@ import javax.microedition.io.StreamConnection;
  * variables with values read from the pi.
  * 
  */
-public class PiSignaler
+public class ComModule
 {
-    private static Object[] packet_in;
+    private static Vector packets_in;
     private static Object[] packet_out;
     
-    private static int packet_length;
+    private static int packet_in_length;
     private static int port;
     
     private static boolean is_transmitting;
@@ -36,9 +36,9 @@ public class PiSignaler
     
     private PiComModule com_thread;
     
-    public PiSignaler(int packet_length, int port)
+    public ComModule(int packet_length, int port)
     {
-        this.packet_length = packet_length;
+        this.packet_in_length = packet_length;
         this.port = port;
         com_thread = new PiComModule();
     }
@@ -62,7 +62,17 @@ public class PiSignaler
     
     public Object[] get_packet_in()
     {
-        return packet_in;
+        int index = 0;
+        int max_time = 0;
+        for (int i = 0; i < packets_in.size(); ++i)
+        {
+            if (((Integer)((Object[])packets_in.elementAt(i))[0]).intValue() > max_time)
+            {
+                index = i;
+                max_time = ((Integer)((Object[])packets_in.elementAt(i))[0]).intValue();
+            }
+        }
+        return ((Object[])packets_in.elementAt(index));
     }
     
     public void update_out_packet(Object[] packet)
@@ -73,19 +83,19 @@ public class PiSignaler
     
     private class PiComModule extends Thread
     {
-        private ServerSocketConnection pi_com;
-        private SocketConnection socket;
         private DataInputStream pi_in;
         private DataOutputStream pi_out;
         
         public PiComModule()
         {
+            ServerSocketConnection pi_com;
+            SocketConnection pi_socket;
             try 
             {
                 pi_com = (ServerSocketConnection) Connector.open("socket:" + RobotMap.RASPBERRY_PI_IP_ADDRESS + ":" + port);
-                socket = (SocketConnection)pi_com.acceptAndOpen();
-                pi_in = socket.openDataInputStream();
-                pi_out = socket.openDataOutputStream();
+                pi_socket = (SocketConnection)pi_com.acceptAndOpen();
+                pi_in = pi_socket.openDataInputStream();
+                pi_out = pi_socket.openDataOutputStream();
             } 
             catch (IOException ex) 
             {
@@ -127,13 +137,17 @@ public class PiSignaler
             }
             if(is_listening)
             {
-                try {
+                try 
+                {
                     in = pi_in.readUTF();
-                } catch (IOException ex) {
+                } 
+                catch (IOException ex) 
+                {
                     ex.printStackTrace();
                 }
             }
             String[] in_array = Utils.split(in, ' ');
+            Object[] packet_in = new Object[packet_in_length];
             for (int i = 0; i < in_array.length; ++i)
             {
                 switch(RobotMap.PACKET_FORMAT[i])
@@ -151,6 +165,8 @@ public class PiSignaler
                         packet_in[i] = in_array[i];
                 }
             }
+            
+            packets_in.addElement(packet_in);
         }
     }
 }

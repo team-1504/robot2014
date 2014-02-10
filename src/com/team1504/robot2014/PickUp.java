@@ -4,8 +4,6 @@
  */
 package com.team1504.robot2014;
 
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.Solenoid;
 
 /**
  *

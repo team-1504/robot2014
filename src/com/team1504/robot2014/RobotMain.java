@@ -8,19 +8,14 @@
 package com.team1504.robot2014;
 
 import edu.wpi.first.wpilibj.CANJaguar;
-import edu.wpi.first.wpilibj.DigitalModule;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.Watchdog;
 import edu.wpi.first.wpilibj.buttons.Button;
-import edu.wpi.first.wpilibj.buttons.DigitalIOButton;
-import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import java.util.Date;
 
@@ -39,48 +34,45 @@ public class RobotMain extends SimpleRobot
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
     
     //Shooter
-    private static Shooter shooter_thread;
+    private static Shooter shooter;
     
-    //Thing those Mechanical Guys Wanted
-    public static Solenoid extend_solenoid_1;
-    public static Solenoid extend_solenoid_2;
-    public static Solenoid retract_solenoid_1;
-    public static Solenoid retract_solenoid_2;
+    //Pickup mechanism
+    private static PickUp pick_up;
+    
+    public static Solenoid pickup_sol_ex_1;
+    public static Solenoid pickup_sol_ex_2;
+    public static Solenoid pickup_sol_ret_1;
+    public static Solenoid pickup_sol_ret_2;
    
     private static ToggleButton pick_up_sol_toggle;
     private static ToggleButton photon_cannon_toggle;
+    
+    //Photon Cannon
+    private static Relay photon_cannon;
+    
+    //Vision
+    private static ComModule pi;
+    
+    //Automation
+    private static boolean is_automated;
+    
+    //Logging
+    private static Logger logger;
     
     //Driver Station
     private static DriverStation ds;
     private static DriverStationLCD ds_LCD;
     
-    //Photon cannony photon_cannon;
-    private static Relay photon_cannon;
-    
-    //Solenoid pickup mechanism
-    private static PickUp pick_up;
-    
-    //Automation
-    private static Button toggle_automation_button;
-    private static Button zone_one_button;
-    private static Button zone_two_button;
-    private static Button zone_three_button;
-    
-    private static boolean is_automated;
-    private static int zone;
-    
-    private static PiSignaler pi;
-   
-    
-    //Logging
-    private static Date date;
-    private static Timer logging_timer;
-    
     public RobotMain()
     {
         //Initialization
         try 
-        {            
+        {
+            operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
+            driver_left_joystick = new Joystick(RobotMap.DRIVER_LEFT_JOYSTICK_PORT);
+            driver_right_joystick = new Joystick(RobotMap.DRIVER_RIGHT_JOYSTICK_PORT);
+            
+            
             front_left_jaguar = new CANJaguar(RobotMap.FRONT_LEFT_JAGUAR_PORT);
             back_left_jaguar = new CANJaguar(RobotMap.BACK_LEFT_JAGUAR_PORT);
             back_right_jaguar = new CANJaguar(RobotMap.BACK_RIGHT_JAGUAR_PORT);
@@ -102,26 +94,22 @@ public class RobotMain extends SimpleRobot
             front_right_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
             front_right_jaguar.configEncoderCodesPerRev(250);
             
+            
             pick_up_jaguar = new CANJaguar(RobotMap.PICK_UP_JAGUAR_PORT);
+            pick_up_jaguar.changeControlMode(CANJaguar.ControlMode.kPercentVbus);
+            pick_up_jaguar.setSpeedReference(CANJaguar.SpeedReference.kQuadEncoder);
+            pick_up_jaguar.configEncoderCodesPerRev(250);
             
-            operator_joystick = new Joystick(RobotMap.OPERATOR_JOYSTICK_PORT);
-            driver_left_joystick = new Joystick(RobotMap.DRIVER_LEFT_JOYSTICK_PORT);
-            driver_right_joystick = new Joystick(RobotMap.DRIVER_RIGHT_JOYSTICK_PORT);
-            
-            extend_solenoid_1 = new Solenoid(RobotMap.PICKUP_EXTEND_1_PORT);
-            extend_solenoid_2 = new Solenoid(RobotMap.PICKUP_EXTEND_2_PORT);
-            retract_solenoid_1 = new Solenoid(RobotMap.PICKUP_RETRACT_1_PORT);
-            retract_solenoid_2 = new Solenoid(RobotMap.PICKUP_RETRACT_2_PORT);
-            
-            photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
+            pickup_sol_ex_1 = new Solenoid(RobotMap.PICKUP_EXTEND_1_PORT);
+            pickup_sol_ex_2 = new Solenoid(RobotMap.PICKUP_EXTEND_2_PORT);
+            pickup_sol_ret_1 = new Solenoid(RobotMap.PICKUP_RETRACT_1_PORT);
+            pickup_sol_ret_2 = new Solenoid(RobotMap.PICKUP_RETRACT_2_PORT);
             
             pick_up_sol_toggle = new ToggleButton(operator_joystick, RobotMap.PICKUP_SOLENOID_BUTTON_INDEX);
-            photon_cannon_toggle = new ToggleButton(operator_joystick, RobotMap.PHOTON_CANNON_TOGGLE_INDEX);
             
-//            toggle_automation_button = new DigitalIOButton(RobotMap.AUTOMATION_TOGGLE_BUTTON_PORT);
-//            zone_one_button = new DigitalIOButton(RobotMap.ZONE_ONE_BUTTON_PORT);
-//            zone_two_button = new DigitalIOButton(RobotMap.ZONE_TWO_BUTTON_PORT);
-//            zone_three_button = new DigitalIOButton(RobotMap.ZONE_THREE_BUTTON_PORT);
+            
+            photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
+            photon_cannon_toggle = new ToggleButton(operator_joystick, RobotMap.PHOTON_CANNON_TOGGLE_INDEX);
             
         } 
         catch (CANTimeoutException ex) 
@@ -131,16 +119,15 @@ public class RobotMain extends SimpleRobot
         
         mecanum = new Mecanum();
         pick_up = new PickUp();
-        logging_timer = new Timer();
+        shooter = new Shooter();
         
         ds = DriverStation.getInstance();
         ds_LCD = DriverStationLCD.getInstance();
         
-        shooter_thread = new Shooter();
+        logger = new Logger();
+        logger.start_logging();
         
         is_automated = false;
-//        pi_module = new PiComModule(1, 0, 3, 0, 0, 0, 5, 3, 0);
-//        pi = new PiSignaler(pi_module);        
     }
     
     /**
@@ -148,16 +135,16 @@ public class RobotMain extends SimpleRobot
      */
     public void autonomous() 
     {
-        
-        logging_timer.start();
         long start_time = System.currentTimeMillis();
         double distance = 0;
         long loop_time = start_time;
         long last_loop_time = loop_time;
         
         pick_up.set_position(RobotMap.PICK_UP_DOWN);
-        extend_solenoid_1.set(pick_up.get_position());
-        retract_solenoid_1.set(!pick_up.get_position());
+        pickup_sol_ex_1.set(pick_up.get_position());
+        pickup_sol_ex_2.set(pick_up.get_position());
+        pickup_sol_ret_1.set(!pick_up.get_position());
+        pickup_sol_ret_2.set(!pick_up.get_position());
         
         double[] auton_commands = new double[3];
         auton_commands[0] = 0.3;
@@ -169,7 +156,7 @@ public class RobotMain extends SimpleRobot
         auton_commands = mecanum.front_side(auton_commands);
         
         
-        while ((Math.abs(System.currentTimeMillis() - 8000) <= start_time) || distance >= 10)
+        while ( ((Math.abs(System.currentTimeMillis() - 8000) <= start_time) || distance >= 10) && isAutonomous() && isEnabled())
         {
             loop_time = System.currentTimeMillis();
             
@@ -181,7 +168,9 @@ public class RobotMain extends SimpleRobot
                 back_left_jaguar.setX(mecanum.get_back_left());
                 back_right_jaguar.setX(mecanum.get_back_right());
                 front_right_jaguar.setX(mecanum.get_front_right());
-            } catch (CANTimeoutException ex){
+            } 
+            catch (CANTimeoutException ex)
+            {
               ex.printStackTrace();
             }
             
@@ -203,10 +192,6 @@ public class RobotMain extends SimpleRobot
      */
     public void operatorControl() 
     {
-        date = new Date();
-        logging_timer.reset();
-        logging_timer.start();
-        
         boolean photon_cannon_state = false;
         boolean rotation_button_pressed = false;
         
@@ -214,6 +199,21 @@ public class RobotMain extends SimpleRobot
         
         while(isOperatorControl() && isEnabled())
         {
+            //Pickup Debugging
+            double pickup_val = 0;
+            
+            pickup_val = operator_joystick.getY() * -1;
+            if (Math.abs(pickup_val) < 0.1) pickup_val = 0;
+            double throttle = (operator_joystick.getThrottle() + 1)*0.5;
+            pickup_val *= throttle;
+            
+            //Mecanum Drive Handling
+            if(driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX))
+            {
+                front_angle = front_angle == 0.? 180.:0.;
+                mecanum.set_front(front_angle);
+            }
+            
             double[] commands = new double[3];
             if (is_automated)
             {
@@ -230,51 +230,37 @@ public class RobotMain extends SimpleRobot
                 commands[1] = driver_left_joystick.getX();
                 commands[2] = driver_right_joystick.getX();
                 mecanum.drive_mecanum(commands);
-                
             }
             
-            double pickup_val = 0;
-            
-            pickup_val = operator_joystick.getY() * -1;
-            if (Math.abs(pickup_val) < 0.1) pickup_val = 0;
-            double throttle = (operator_joystick.getThrottle() + 1)*0.5;
-            pickup_val *= throttle;
-            
+            //Pickup Handling
             if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_STOP))
             {
                 pick_up.set_speed(RobotMap.PICK_UP_STOP);
             }
-
             else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_REVERSE))
             {
                 pick_up.set_speed(RobotMap.PICK_UP_REVERSE);
             }
-
             else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MED))
             {
                 pick_up.set_speed(RobotMap.PICK_UP_MED);
             }
-
             else if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_MAX))
             {
                 pick_up.set_speed(RobotMap.PICK_UP_MAX);
             }
             
+            //Shooter Handling
             if (operator_joystick.getTrigger())
             {
-                shooter_thread.fire(true);
+                shooter.fire(true);
             }
             else
             {
-                shooter_thread.fire(false);
-            }
-            
-            rotation_button_pressed = driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX);
-            if(driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX))
-            {
-                front_angle = front_angle == 0.? 180.:0.; 
+                shooter.fire(false);
             }
 
+            //Photon Cannon Handling
             if (photon_cannon_toggle.should_toggle())
             {      
                photon_cannon_state = !photon_cannon_state;
@@ -290,23 +276,24 @@ public class RobotMain extends SimpleRobot
             
             try
             {
-                pick_up_jaguar.setX(pickup_val);
-                
+                //Set Jaguars
                 front_left_jaguar.setX(mecanum.get_front_left());
                 back_left_jaguar.setX(mecanum.get_back_left());
                 back_right_jaguar.setX(mecanum.get_back_right());
                 front_right_jaguar.setX(mecanum.get_front_right());
                 
-                //the previous state of the position of the button
+                pick_up_jaguar.setX(pickup_val);
+                
+                //Set Solenoids
                 if (pick_up_sol_toggle.should_toggle())
                 {
-                     extend_solenoid_1.set(pick_up.get_position());
-                     retract_solenoid_1.set(!pick_up.get_position());
-
+                     pickup_sol_ex_1.set(pick_up.get_position());
+                     pickup_sol_ex_2.set(pick_up.get_position());
+                     pickup_sol_ret_1.set(!pick_up.get_position());
+                     pickup_sol_ret_2.set(!pick_up.get_position());
                 }
                 
-//                pick_up_jaguar.setX(pick_up.get_jaguar_value());
-                
+                //Write to Driver's Station
                 ds_LCD.clear();
                 ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag FL Speed: " + front_left_jaguar.getSpeed());
                 ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Jag BL Speed: " + back_left_jaguar.getSpeed());
@@ -314,14 +301,17 @@ public class RobotMain extends SimpleRobot
                 ds_LCD.println(DriverStationLCD.Line.kUser4, 1, "Jag FR Speed: " + front_right_jaguar.getSpeed());
                 
                 ds_LCD.updateLCD();
+                
+                //Update Log File
+                String log_line = "" + System.currentTimeMillis() + " ";
+                log_line = log_line + front_left_jaguar.getSpeed() + " " + back_left_jaguar.getSpeed() + " " + back_right_jaguar.getSpeed() + " " + front_right_jaguar.getSpeed() + " ";
+                log_line = log_line + pick_up_jaguar.getSpeed() + " ";
+                logger.write_f(System.currentTimeMillis() + log_line);
             } 
             catch (CANTimeoutException ex)
             {
                 ex.printStackTrace();
             }
-            
-            
-
         }
     }
     /**
