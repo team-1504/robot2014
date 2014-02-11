@@ -42,27 +42,28 @@ public class Mecanum
     {
         this.mult_correction = mult_correction;
     }
-
+    
+    public double[] detents(double[] dircn)
+    {
+        double theta = MathUtils.atan2(-dircn[0], dircn[1]);
+        double dx = correct_x(theta) * distance(dircn[1], -dircn[0]) * mult_correction;
+        double dy = correct_y(theta) * distance(dircn[1], -dircn[0]) * mult_correction;
+        
+        dircn[0] = MathUtils.pow(-dircn[0], 3) + dy;
+        dircn[1] = MathUtils.pow(dircn[1], 3) + dx;
+        
+        System.out.println("detented vals: " + dircn[0] + " " + dircn[1]);
+        
+        return dircn;
+    }
     
     public double[] front_side(double[] dircn)
     {
         double[] dir_offset = new double[3];
         dir_offset[0] = dircn[0] * Math.cos(rotation_offset) + dircn[1] * Math.sin(rotation_offset);
-        dir_offset[1] = dircn[1] * Math.cos(rotation_offset) + dircn[0] * Math.sin(rotation_offset);
+        dir_offset[1] = dircn[1] * Math.cos(rotation_offset) - dircn[0] * Math.sin(rotation_offset);
         dir_offset[2] = dircn[2];
         return dir_offset;
-    }
-    
-    public double[] detents(double[] dircn)
-    {
-        double theta = MathUtils.atan2(dircn[0], dircn[1]);
-        double dx = correct_x(theta) * distance(dircn[1], dircn[0]) * mult_correction;
-        double dy = correct_y(theta) * distance(dircn[1], dircn[0]) * mult_correction;
-        
-        dircn[0] = MathUtils.pow(dircn[0], 3) + dy;
-        dircn[1] = MathUtils.pow(dircn[1], 3) + dx;
-        
-        return dircn;
     }
     
     public double[] orbit_point(double[] dircn)
@@ -71,26 +72,24 @@ public class Mecanum
     }
 
     public void drive_mecanum(double[] directions)
-    {
-        double forward = directions[0];
-        double right = directions[1];
-        double ccw = directions[2];
-           
-        double max = Math.max(1.0, Math.abs(forward) + Math.abs(right) + Math.abs(ccw));
-//        System.out.println(max);    
-
-//        System.out.println(forward + " " + right + " " + counter_clockwise);
-        directions = detents(directions);
-        directions = front_side(directions);
+    {  
+        double[] dircns;
         
-        directions = orbit_point(directions);
+//        dircns = detents(directions);
+        dircns = front_side(directions);
+//        directions = orbit_point(dircns);
+        
+        double forward = dircns[0];
+        double right = dircns[1];
+        double ccw = dircns[2];
+        
+        double max = Math.max(1.0, Math.abs(forward) + Math.abs(right) + Math.abs(ccw));
+
         
         front_left_val = ((forward + right - ccw) * RobotMap.FRONT_LEFT_MAGIC_NUMBER / max);        
         back_left_val = ((forward - right - ccw) * RobotMap.BACK_LEFT_MAGIC_NUMBER / max);
         back_right_val = ((forward + right + ccw) * RobotMap.BACK_RIGHT_MAGIC_NUMBER / max);
         front_right_val = ((forward - right + ccw) * RobotMap.FRONT_RIGHT_MAGIC_NUMBER / max);
-        
-//        System.out.println(front_left_val + " " + back_left_val + " " + back_right_val + " " + front_right_val);
     }
 
     public double get_front_left(){return front_left_val;}

@@ -30,7 +30,7 @@ public class RobotMap
     
     public static final int PICKUP_SOLENOID_BUTTON_INDEX = 2;
     
-    public static final int ROTATION_BUTTON_INDEX = 45; 
+    public static final int ROTATION_BUTTON_INDEX = 2; 
     
     public static final int FRONT_LEFT_MAGIC_NUMBER = 1;
     public static final int BACK_LEFT_MAGIC_NUMBER = 1;
@@ -39,7 +39,10 @@ public class RobotMap
     
     public static final int SHOOTER_JAGUAR_PORT_1 = 20;
     public static final int SHOOTER_JAGUAR_PORT_2 = 21;
-    public static final int SHOOTER_POT_MODULE_NUM = 0;
+    public static final int SHOOTER_POT_MODULE_NUM = 5;
+    public static final double SHOOTER_POT_BASE_VAL = 0;
+    public static final double SHOOTER_POT_RELEASE_VAL = 0.35;
+    public static final double SHOOTER_ANGLE_TOLERANCE = 0.01;
     
     public static final int PICK_UP_BUTTON_STOP = 2;
     public static final int PICK_UP_BUTTON_REVERSE = 3;

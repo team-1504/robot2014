@@ -18,26 +18,27 @@ import edu.wpi.first.wpilibj.can.CANTimeoutException;
 public class Shooter
 {
     private static final double DEFAULT_FIRE_DISTANCE = 0;
-    private static final long DEFAULT_RAMP_TIME = 250;
+    private static final int DEFAULT_RAMP_TIME = 250;
     private static final double DEFAULT_ANGLE = 0.7;
     private static final double POT_RANGE = 90;
     
-    private static boolean is_firing;
+    private boolean is_firing;
+    private boolean enabled;
     
-    private static int ramp_time;
+    private int ramp_time;
     
-    private static double stop_angle;
+    private double stop_angle;
     
-    private static CANJaguar shooter_jag_1;
-    private static CANJaguar shooter_jag_2;
+    private CANJaguar shooter_jag_1;
+    private CANJaguar shooter_jag_2;
     
-    private static AnalogChannel pot;
+    private AnalogChannel pot;
     
-    private static ShooterThread sh_thread;
+    private ShooterThread sh_thread;
     
-    private static Solenoid solenoid_1 = RobotMain.pickup_sol_ex_2;
-    private static Solenoid solenoid_2 = RobotMain.pickup_sol_ret_2;
-    private static boolean solenoid = true;
+    private Solenoid solenoid_1 = RobotMain.pickup_sol_ex_2;
+    private Solenoid solenoid_2 = RobotMain.pickup_sol_ret_2;
+    private boolean solenoid = true;
     
     public Shooter()
     {
@@ -53,21 +54,44 @@ public class Shooter
         {
             ex.printStackTrace();
         }
-        pot = new AnalogChannel(RobotMap.SHOOTER_POT_MODULE_NUM);
+//        pot = new AnalogChannel(RobotMap.SHOOTER_POT_MODULE_NUM);
         stop_angle = DEFAULT_ANGLE;
         
-        solenoid_set(solenoid);
+//        solenoid_set(solenoid);
         
         is_firing = false;
         
-        sh_thread = new ShooterThread();
+        ramp_time = DEFAULT_RAMP_TIME;
+        
+        System.out.println("Shooter starting");
+        sh_thread = new ShooterThread(this);
+    }
+    
+    private void set_latch(boolean latch_down)
+    {
+        solenoid_1.set(latch_down);
+        solenoid_2.set(!latch_down);
+    }
+    
+    public void enable()
+    {
+        enabled = true;
         sh_thread.start();   
     }
     
-    private void solenoid_set(boolean solenoid)
+    public void disable()
     {
-        solenoid_1.set(solenoid);
-        solenoid_2.set(!solenoid);
+        enabled = false;
+    }
+
+    public boolean is_enabled()
+    {
+        return enabled;
+    }
+            
+    public boolean is_firing()
+    {
+        return is_firing;
     }
     
     public void fire(boolean firing)
@@ -77,19 +101,41 @@ public class Shooter
     
     private class ShooterThread extends Thread
     {
+        private Shooter sh;
+        public ShooterThread(Shooter sh)
+        {
+            this.sh = sh;
+        }
         public void run() 
         {
-            long last_loop_time = System.currentTimeMillis();
-
-            double value = 0;
-
-            while(is_firing && get_angle() < stop_angle)
+            boolean just_fired = false;
+            while(true)
             {
-                solenoid = false;
-                solenoid_set(solenoid);
-                value += ((double)(System.currentTimeMillis() - last_loop_time)) / ramp_time;
-                last_loop_time = System.currentTimeMillis();
-                set_shooter_speed(( value >= 1) ? 1: value );
+//                System.out.println("Shooter thread running");
+                long last_loop_time = System.currentTimeMillis();
+
+                double value = 0;
+                
+                if (is_firing)
+                {
+                    set_latch(true);
+                }
+
+                while(sh.is_firing() )//&& Math.abs(get_angle() - stop_angle) > RobotMap.SHOOTER_ANGLE_TOLERANCE)
+                {
+//                    System.out.println("S: is firing -- " + value);
+                    solenoid = false;
+                    set_latch(solenoid);
+                    value += ((double)(System.currentTimeMillis() - last_loop_time)) / ramp_time;
+                    last_loop_time = System.currentTimeMillis();
+                    set_shooter_speed(( value >= 1) ? 1: value );
+                    just_fired = true;
+                }
+                if (just_fired)
+                {
+                    reset_shooter();
+                    just_fired = false;
+                }
             }
         }
         
@@ -104,6 +150,16 @@ public class Shooter
                 ex.printStackTrace();
             }
             return pos;
+        }
+        
+        private void reset_shooter()
+        {
+            for (;Math.abs(get_angle() - RobotMap.SHOOTER_POT_BASE_VAL) > RobotMap.SHOOTER_ANGLE_TOLERANCE;)
+            {
+                set_shooter_speed(-0.1);
+            }
+            set_shooter_speed(0.0);
+            set_latch(true);
         }
         
         private void set_shooter_speed(double speed)
