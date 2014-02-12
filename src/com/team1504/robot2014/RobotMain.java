@@ -32,6 +32,7 @@ public class RobotMain extends SimpleRobot
     private static Mecanum mecanum;
     private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar, pick_up_jaguar; 
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
+    private static ToggleButton toggle_front;
     
     //Shooter
     private static Shooter shooter;
@@ -45,10 +46,10 @@ public class RobotMain extends SimpleRobot
     public static Solenoid pickup_sol_ret_2;
    
     private static ToggleButton pick_up_sol_toggle;
-    private static ToggleButton photon_cannon_toggle;
     
     //Photon Cannon
     private static Relay photon_cannon;
+    private static ToggleButton photon_cannon_toggle;
     
     //Vision
     private static ComModule pi;
@@ -114,15 +115,15 @@ public class RobotMain extends SimpleRobot
             
             photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
             photon_cannon_toggle = new ToggleButton(operator_joystick, RobotMap.PHOTON_CANNON_TOGGLE_INDEX);
-            
+            toggle_front = new ToggleButton(driver_left_joystick, RobotMap.ROTATION_BUTTON_INDEX);
         } 
         catch (CANTimeoutException ex) 
         {
             ex.printStackTrace();
         }
         
-        pi = new ComModule(RobotMap.RASPBERRY_PI_IP_ADDRESS, 1, 1504);
-        pi.start();
+//        pi = new ComModule(RobotMap.RASPBERRY_PI_IP_ADDRESS, 1, 1504);
+//        pi.start();
         
         mecanum = new Mecanum();
         pick_up = new PickUp();
@@ -133,6 +134,8 @@ public class RobotMain extends SimpleRobot
         
         logger = new Logger();
         logger.start_logging();
+        
+        shooter.enable();
         
         is_automated = false;
     }
@@ -202,10 +205,10 @@ public class RobotMain extends SimpleRobot
         while(isOperatorControl() && isEnabled())
         {
             //Com Debugging
-            Object[] packet = new Object[1];
-            packet[0] = new Long(System.currentTimeMillis() - start_time);
-            
-            pi.update_out_packet(packet);
+//            Object[] packet = new Object[1];
+//            packet[0] = new Long(System.currentTimeMillis() - start_time);
+//            
+//            pi.update_out_packet(packet);
             
             //Pickup Debugging
             double pickup_val = 0;
@@ -216,7 +219,7 @@ public class RobotMain extends SimpleRobot
             pickup_val *= throttle;
             
             //Mecanum Drive Handling
-            if(driver_left_joystick.getRawButton(RobotMap.ROTATION_BUTTON_INDEX))
+            if(toggle_front.should_toggle())
             {
                 front_angle = front_angle == 0.? 180.:0.;
                 mecanum.set_front(front_angle);
@@ -234,9 +237,9 @@ public class RobotMain extends SimpleRobot
             }
             else
             {
-                commands[0] = -1*driver_left_joystick.getY();
-                commands[1] = driver_left_joystick.getX();
-                commands[2] = driver_right_joystick.getX();
+                commands[0] = driver_left_joystick.getTrigger()? -1*driver_left_joystick.getY(): -0.4*driver_left_joystick.getY();
+                commands[1] = driver_left_joystick.getTrigger()? driver_left_joystick.getX(): 0.4* driver_left_joystick.getX();
+                commands[2] = driver_left_joystick.getTrigger()? driver_right_joystick.getX(): 0.4 * driver_right_joystick.getX();
                 mecanum.drive_mecanum(commands);
             }
             
@@ -261,6 +264,7 @@ public class RobotMain extends SimpleRobot
             //Shooter Handling
             if (operator_joystick.getTrigger())
             {
+                System.out.println("RM: is firing");
                 shooter.fire(true);
             }
             else
@@ -321,6 +325,7 @@ public class RobotMain extends SimpleRobot
                 ex.printStackTrace();
             }
         }
+        shooter.disable();
     }
     /**
      * This function is called once each time the robot enters test mode.
