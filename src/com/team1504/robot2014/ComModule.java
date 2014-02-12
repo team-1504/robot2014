@@ -6,14 +6,10 @@
 
 package com.team1504.robot2014;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Vector;
 import javax.microedition.io.Connector;
 import javax.microedition.io.Datagram;
-import javax.microedition.io.ServerSocketConnection;
-import javax.microedition.io.SocketConnection;
 import javax.microedition.io.UDPDatagramConnection;
 
 /**
@@ -119,6 +115,15 @@ public class ComModule
                         }
                         out += val;
                     }
+                    else if (packet_out[i] instanceof Long)
+                    {
+                        val = new char[8];
+                        long lng = ((Long)packet_out[i]).longValue();
+                        for (int j = 0; j < 8; ++j)
+                        {
+                            val[j] = (char)((lng >> ((7 - j) * 8)) & 0xff);
+                        }
+                    }
                     else if (packet_out[i] instanceof Integer)
                     {
                         val = new char[4];
@@ -172,8 +177,8 @@ public class ComModule
                 {
                     case 0:
                         boolean n;
-                        n = in.charAt(i) == 0? false: true;
-                        packet_in[i] = new Boolean(n);
+                        n = (in.charAt(i) == 1);
+                        packet_in[i] = (n ? Boolean.TRUE : Boolean.FALSE);
                         ++i;
                         break;
                     case 1:
