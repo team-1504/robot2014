@@ -11,8 +11,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Vector;
 import javax.microedition.io.Connector;
+import javax.microedition.io.Datagram;
 import javax.microedition.io.ServerSocketConnection;
 import javax.microedition.io.SocketConnection;
+import javax.microedition.io.UDPDatagramConnection;
 
 /**
  *
@@ -29,7 +31,6 @@ public class ComModule
     private static Object[] packet_out;
     
     private static int packet_in_length;
-    private static int port;
     
     private static boolean is_transmitting;
     private static boolean is_listening;
@@ -39,8 +40,7 @@ public class ComModule
     public ComModule(String address, int packet_in_length, int port)
     {
         this.packet_in_length = packet_in_length;
-        this.port = port;
-        com_thread = new PiComModule(address);
+        com_thread = new PiComModule(address, port);
     }
     
     public void start()
@@ -63,13 +63,13 @@ public class ComModule
     public Object[] get_packet_in()
     {
         int index = 0;
-        int max_time = 0;
+        long max_time = 0;
         for (int i = 0; i < packets_in.size(); ++i)
         {
             if (((Integer)((Object[])packets_in.elementAt(i))[0]).intValue() > max_time)
             {
                 index = i;
-                max_time = ((Integer)((Object[])packets_in.elementAt(i))[0]).intValue();
+                max_time = ((Long)((Object[])packets_in.elementAt(i))[0]).longValue();
             }
         }
         return ((Object[])packets_in.elementAt(index));
@@ -83,19 +83,13 @@ public class ComModule
     
     private class PiComModule extends Thread
     {
-        private DataInputStream pi_in;
-        private DataOutputStream pi_out;
+        UDPDatagramConnection pi_com;
         
-        public PiComModule(String address)
+        public PiComModule(String address, int port)
         {
-            ServerSocketConnection pi_com;
-            SocketConnection pi_socket;
             try 
             {
-                pi_com = (ServerSocketConnection) Connector.open("socket:" + address + ":" + port);
-                pi_socket = (SocketConnection)pi_com.acceptAndOpen();
-                pi_in = pi_socket.openDataInputStream();
-                pi_out = pi_socket.openDataOutputStream();
+                pi_com = (UDPDatagramConnection) Connector.open("datagram://" + address + ":" + port);
             } 
             catch (IOException ex) 
             {
@@ -107,6 +101,8 @@ public class ComModule
         {
             String in = "";
             String out = "";
+            
+            Datagram out_d;
             
             if(is_transmitting)
             {
@@ -142,7 +138,8 @@ public class ComModule
                 }
                 try 
                 {
-                    pi_out.writeUTF(out);
+                    out_d = pi_com.newDatagram(out.getBytes(), out.length());
+                    pi_com.send(out_d);
                 } 
                 catch (IOException ex) 
                 {
@@ -151,9 +148,17 @@ public class ComModule
             }
             if(is_listening)
             {
+                int size = 0;
+                for (int i = 0; i < RobotMap.PACKET_FORMAT.length; ++i)
+                {
+                    size += RobotMap.INDEXED_TYPE_SIZES[RobotMap.PACKET_FORMAT[i]];
+                }
+                Datagram in_d;
                 try 
                 {
-                    in = pi_in.readUTF();
+                    in_d = pi_com.newDatagram(size);
+                    pi_com.receive(in_d);
+                    in = new String(in_d.getData());
                 } 
                 catch (IOException ex) 
                 {
