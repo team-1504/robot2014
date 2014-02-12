@@ -25,7 +25,7 @@ public class Mecanum
     
     public Mecanum()
     {
-        mult_correction = 1;
+        mult_correction = 0.25;
     }
     
     public void set_front(double rot_offset)
