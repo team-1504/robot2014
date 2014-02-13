@@ -59,7 +59,10 @@ public class RobotMap
     
     public static final int COMPASS_MODULE_ADDRESS = 2;
     
-    public static final int PHOTON_CANNON_PORT = 1;
+    public static final int COMPRESSOR_RELAY_NUM = 1;
+    public static final int PRESSURE_ANALOG_INPUT = 14;
+    
+    public static final int PHOTON_CANNON_PORT = 8;
     public static final int PHOTON_CANNON_TOGGLE_INDEX = 5;
     
     public static final String RASPBERRY_PI_IP_ADDRESS = "10.15.4.7";
