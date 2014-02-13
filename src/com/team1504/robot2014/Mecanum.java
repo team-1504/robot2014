@@ -25,7 +25,7 @@ public class Mecanum
     
     public Mecanum()
     {
-        mult_correction = 1;
+        mult_correction = 0.25;
     }
     
     public void set_front(double rot_offset)
@@ -65,10 +65,29 @@ public class Mecanum
         dir_offset[2] = dircn[2];
         return dir_offset;
     }
-    
+        
     public double[] orbit_point(double[] dircn)
     {
-        return dircn;
+        double x = orbit_offset[0];
+        double y = orbit_offset[1];
+        double forward = dircn[0];
+        double right = dircn[1];
+        double ccw = dircn[2];
+        
+        double p = Math.sqrt(((MathUtils.pow(y-1, 2) + (MathUtils.pow(1-x, 2))/Math.sqrt(2)))) * Math.cos(45*Math.PI/180 + MathUtils.atan2(y-1, 1-x));
+        double r = Math.sqrt(((MathUtils.pow(y+1, 2) + (MathUtils.pow(1-x, 2))/Math.sqrt(2)))) * Math.cos(-45*Math.PI/180 + MathUtils.atan2(y+1, 1-x));
+        double q = -Math.sqrt(((MathUtils.pow(y+1, 2) + (MathUtils.pow(-1-x, 2))/Math.sqrt(2)))) * Math.cos(45*Math.PI/180 + MathUtils.atan2(y+1, -1-x));
+        
+        double new_forward = (ccw * r + (forward - ccw) * q + forward * p)/(q + p);
+        double new_right = (-ccw * r + right * q - (-right-ccw) * p)/(q + p);
+        double new_ccw = (2 * ccw)/(q+p);
+        
+        double[] directions = new double[3];
+        directions[0] = new_forward;
+        directions[1] = new_right;
+        directions[2] = new_ccw;
+        
+        return directions;
     }
 
     public void drive_mecanum(double[] directions)

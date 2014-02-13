@@ -40,6 +40,12 @@ public class Logger
         logger.write_sparse_log(line);
     }
     
+    public void start()
+    {
+        logger.start();
+        start_logging();
+    }
+    
     public void start_logging()
     {
         is_logging = true;
