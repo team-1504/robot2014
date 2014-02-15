@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.can.CANTimeoutException;
 public class Shooter
 {
     private static final double DEFAULT_FIRE_DISTANCE = 0;
-    private static final int DEFAULT_RAMP_TIME = 250;
+    private static final int DEFAULT_RAMP_TIME = 50;
     private static final double DEFAULT_ANGLE = 0.7;
     private static final double POT_RANGE = 90;
     
@@ -32,7 +32,7 @@ public class Shooter
     private CANJaguar shooter_jag_1;
     private CANJaguar shooter_jag_2;
     
-    private AnalogChannel pot;
+    private double shooter_angle;
     
     private ShooterThread sh_thread;
     
@@ -47,15 +47,15 @@ public class Shooter
             shooter_jag_1 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_1);
             shooter_jag_2 = new CANJaguar(RobotMap.SHOOTER_JAGUAR_PORT_2);
             
-            shooter_jag_1.setPositionReference(CANJaguar.PositionReference.kPotentiometer);
-            shooter_jag_1.configPotentiometerTurns(2);
+            shooter_jag_2.setPositionReference(CANJaguar.PositionReference.kPotentiometer);
+            shooter_jag_2.configPotentiometerTurns(10);
         }
         catch (CANTimeoutException ex)
         {
             ex.printStackTrace();
         }
 //        pot = new AnalogChannel(RobotMap.SHOOTER_POT_MODULE_NUM);
-        stop_angle = DEFAULT_ANGLE;
+        stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL;
         
 //        solenoid_set(solenoid);
         
@@ -79,6 +79,13 @@ public class Shooter
         sh_thread.start();   
     }
     
+    public void re_enable()
+    {
+        enabled = true;
+        sh_thread = new ShooterThread(this);
+        sh_thread.start();
+    }
+    
     public void disable()
     {
         enabled = false;
@@ -99,6 +106,22 @@ public class Shooter
         is_firing = firing;
     }
     
+    public double get_angle()
+    {
+        return shooter_angle;
+    }
+    
+    public double get_shooter_speed()
+    {
+        double speed = 0;
+        try {
+            speed = shooter_jag_1.getSpeed();
+        } catch (CANTimeoutException ex) {
+            ex.printStackTrace();
+        }
+        return speed;
+    }
+    
     private class ShooterThread extends Thread
     {
         private Shooter sh;
@@ -109,7 +132,7 @@ public class Shooter
         public void run() 
         {
             boolean just_fired = false;
-            while(true)
+            while(enabled)
             {
 //                System.out.println("Shooter thread running");
                 long last_loop_time = System.currentTimeMillis();
@@ -120,9 +143,11 @@ public class Shooter
                 {
                     set_latch(true);
                 }
-
-                while(sh.is_firing() )//&& Math.abs(get_angle() - stop_angle) > RobotMap.SHOOTER_ANGLE_TOLERANCE)
+                update_angle();
+                
+                while(Math.abs(shooter_angle - (stop_angle + 0.3)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && sh.is_firing())
                 {
+                    update_angle();
 //                    System.out.println("S: is firing -- " + value);
                     solenoid = false;
                     set_latch(solenoid);
@@ -139,24 +164,32 @@ public class Shooter
             }
         }
         
-        private double get_angle()
+        private void update_angle()
         {
 //            double volts = ((pot.getLSBWeight() * 1e-9) * pot.getVoltage()) - (pot.getOffset() * 1e-9);
 //            return (volts + 10) * (POT_RANGE / 20.);
             double pos = 0;
             try {
-                pos = shooter_jag_1.getPosition();
+                pos = shooter_jag_2.getPosition();
             } catch (CANTimeoutException ex) {
                 ex.printStackTrace();
             }
-            return pos;
+            shooter_angle = pos;
         }
         
         private void reset_shooter()
         {
-            for (;Math.abs(get_angle() - RobotMap.SHOOTER_POT_BASE_VAL) > RobotMap.SHOOTER_ANGLE_TOLERANCE;)
+            while (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_BASE_VAL)) > RobotMap.SHOOTER_ANGLE_TOLERANCE)
             {
-                set_shooter_speed(-0.1);
+                update_angle();
+                if (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_RELEASE_VAL)) < 0.3 )
+                {
+                    set_shooter_speed(-8.0);
+                }
+                else
+                {
+                    set_shooter_speed(-0.3);
+                }
             }
             set_shooter_speed(0.0);
             set_latch(true);
