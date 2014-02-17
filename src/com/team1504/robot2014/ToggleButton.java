@@ -24,7 +24,7 @@ public class ToggleButton
         button_index = index;
     }
     
-    public boolean should_toggle()
+    public boolean is_rising()
     {
         boolean state = !prev_button_state && joystick.getRawButton(button_index);
         prev_button_state = joystick.getRawButton(button_index);

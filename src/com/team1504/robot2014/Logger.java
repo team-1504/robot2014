@@ -25,7 +25,16 @@ public class Logger
     {
         Calendar cal = Calendar.getInstance();
         String f_name, s_name;
-        f_name = "log_" + cal.get(Calendar.YEAR) + "." + cal.get(Calendar.MONTH) + "." + cal.get(Calendar.DAY_OF_MONTH) + "." + cal.get(Calendar.HOUR) + "." + cal.get(Calendar.MINUTE);
+        f_name = "log_" + cal.getTime().getTime();
+        s_name = f_name + "_sparse";
+        logger = new LoggingThread(f_name + ".log", s_name + ".log");
+    }
+    
+    public void reset_files()
+    {
+        Calendar cal = Calendar.getInstance();
+        String f_name, s_name;
+        f_name = "log_" + cal.getTime().getTime();
         s_name = f_name + "_sparse";
         logger = new LoggingThread(f_name + ".log", s_name + ".log");
     }

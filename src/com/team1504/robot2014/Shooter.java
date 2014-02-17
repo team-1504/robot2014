@@ -28,6 +28,7 @@ public class Shooter
     private int ramp_time;
     
     private double stop_angle;
+    private double max_speed;
     
     private CANJaguar shooter_jag_1;
     private CANJaguar shooter_jag_2;
@@ -55,7 +56,7 @@ public class Shooter
             ex.printStackTrace();
         }
 //        pot = new AnalogChannel(RobotMap.SHOOTER_POT_MODULE_NUM);
-        stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL;
+        stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL;
         
 //        solenoid_set(solenoid);
         
@@ -99,6 +100,21 @@ public class Shooter
     public boolean is_firing()
     {
         return is_firing;
+    }
+    
+    public void fire(boolean firing, int type)
+    {
+        is_firing = firing;
+        if (type == 0)
+        {
+            stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL;
+            max_speed = RobotMap.SHOOTER_GOAL_SPEED_MAX;
+        }
+        else if (type == 1)
+        {
+            stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL_TOSS;
+            max_speed = RobotMap.SHOOTER_TOSS_SPEED_MAX;
+        }
     }
     
     public void fire(boolean firing)
@@ -145,7 +161,7 @@ public class Shooter
                 }
                 update_angle();
                 
-                while(Math.abs(shooter_angle - (stop_angle + 0.3)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && sh.is_firing())
+                while(Math.abs(shooter_angle - (stop_angle)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && sh.is_firing())
                 {
                     update_angle();
 //                    System.out.println("S: is firing -- " + value);
@@ -153,7 +169,7 @@ public class Shooter
                     set_latch(solenoid);
                     value += ((double)(System.currentTimeMillis() - last_loop_time)) / ramp_time;
                     last_loop_time = System.currentTimeMillis();
-                    set_shooter_speed(( value >= 1) ? 1: value );
+                    set_shooter_speed(( value >= max_speed) ? max_speed: value );
                     just_fired = true;
                 }
                 if (just_fired)
@@ -161,6 +177,7 @@ public class Shooter
                     reset_shooter();
                     just_fired = false;
                 }
+                sh.fire(false);
             }
         }
         
@@ -182,7 +199,7 @@ public class Shooter
             while (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_BASE_VAL)) > RobotMap.SHOOTER_ANGLE_TOLERANCE)
             {
                 update_angle();
-                if (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_RELEASE_VAL)) < 0.3 )
+                if (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL)) < 0.3 )
                 {
                     set_shooter_speed(-8.0);
                 }

@@ -26,16 +26,13 @@ public class ComModule
     private static Vector packets_in;
     private static Object[] packet_out;
     
-    private static int packet_in_length;
-    
     private static boolean is_transmitting;
     private static boolean is_listening;
     
     private PiComModule com_thread;
     
-    public ComModule(String address, int packet_in_length, int port)
+    public ComModule(String address, int port)
     {
-        this.packet_in_length = packet_in_length;
         com_thread = new PiComModule(address, port);
     }
     
@@ -170,7 +167,7 @@ public class ComModule
                     ex.printStackTrace();
                 }
             }
-            Object[] packet_in = new Object[packet_in_length];
+            Object[] packet_in = new Object[RobotMap.PACKET_FORMAT.length];
             for (int i = 0; i < in.length();)
             {
                 switch(RobotMap.PACKET_FORMAT[i])
