@@ -51,14 +51,14 @@ public class RobotMap
     public static final double SHOOTER_TOSS_SPEED_MAX = 0.8;
     public static final double SHOOTER_GOAL_SPEED_MAX = 1.0;
     public static final double SHOOTER_POT_BASE_VAL = 5.73;
-    public static final double SHOOTER_POT_RELEASE_VAL_GOAL = 4.75;
+    public static final double SHOOTER_POT_RELEASE_VAL_GOAL = 4.7;
     public static final double SHOOTER_POT_RELEASE_VAL_TOSS = 5.0;
     public static final double SHOOTER_ANGLE_TOLERANCE = 0.05;
     
-    public static final int PICK_UP_BUTTON_STOP = 2;
-    public static final int PICK_UP_BUTTON_REVERSE = 3;
+    public static final int PICK_UP_BUTTON_STOP = 3;
+    public static final int PICK_UP_BUTTON_REVERSE = 5;
     public static final int PICK_UP_BUTTON_MED = 4;
-    public static final int PICK_UP_BUTTON_MAX = 5;
+    public static final int PICK_UP_BUTTON_MAX = 6;
     
     public static final int PICK_UP_STOP = 0;
     public static final int PICK_UP_MAX = 1;

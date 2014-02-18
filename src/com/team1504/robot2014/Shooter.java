@@ -64,7 +64,6 @@ public class Shooter
         
         ramp_time = DEFAULT_RAMP_TIME;
         
-        System.out.println("Shooter starting");
         sh_thread = new ShooterThread(this);
     }
     
@@ -83,6 +82,8 @@ public class Shooter
     public void re_enable()
     {
         enabled = true;
+        
+        System.out.println("Shooter starting");
         sh_thread = new ShooterThread(this);
         sh_thread.start();
     }
@@ -104,7 +105,6 @@ public class Shooter
     
     public void fire(boolean firing, int type)
     {
-        is_firing = firing;
         if (type == 0)
         {
             stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL;
@@ -115,6 +115,11 @@ public class Shooter
             stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL_TOSS;
             max_speed = RobotMap.SHOOTER_TOSS_SPEED_MAX;
         }
+        if (firing)
+        {
+            set_latch(false);
+        }
+        fire(firing);
     }
     
     public void fire(boolean firing)
@@ -154,14 +159,9 @@ public class Shooter
                 long last_loop_time = System.currentTimeMillis();
 
                 double value = 0;
-                
-                if (is_firing)
-                {
-                    set_latch(true);
-                }
                 update_angle();
                 
-                while(Math.abs(shooter_angle - (stop_angle)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && sh.is_firing())
+                while((Math.abs(shooter_angle - (stop_angle)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && shooter_angle > stop_angle) && sh.is_firing())
                 {
                     update_angle();
 //                    System.out.println("S: is firing -- " + value);
@@ -172,8 +172,8 @@ public class Shooter
                     set_shooter_speed(( value >= max_speed) ? max_speed: value );
                     just_fired = true;
                 }
-                if (just_fired)
-                {
+                if (just_fired || (sh.is_firing() && shooter_angle < stop_angle))
+                {                    
                     reset_shooter();
                     just_fired = false;
                 }
@@ -196,10 +196,15 @@ public class Shooter
         
         private void reset_shooter()
         {
-            while (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_BASE_VAL)) > RobotMap.SHOOTER_ANGLE_TOLERANCE)
+            long start_time = System.currentTimeMillis();
+            while (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_BASE_VAL)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && Math.abs(start_time - System.currentTimeMillis()) < 1000)
             {
                 update_angle();
-                if (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL)) < 0.3 )
+                if (shooter_angle == 0)
+                {
+                    set_shooter_speed(-0.3);
+                }
+                else if (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL)) < 0.3 )
                 {
                     set_shooter_speed(-8.0);
                 }

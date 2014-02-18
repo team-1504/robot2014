@@ -7,6 +7,10 @@
 package com.team1504.robot2014;
 
 import com.sun.squawk.microedition.io.FileConnection;
+import edu.wpi.first.wpilibj.CANJaguar;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.can.CANTimeoutException;
+import edu.wpi.first.wpilibj.networktables2.util.List;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Calendar;
@@ -19,10 +23,30 @@ import javax.microedition.io.Connector;
 public class Logger 
 {
     private static LoggingThread logger;
+    private CANJaguar fl, bl, br, fr, pickup;
+    private Shooter sh;
+    private Joystick joy_left, joy_right, joy_op;
+    private Mecanum mec;
     private boolean is_logging;
+    private boolean write_freq;
     
-    public Logger()
+    List frequent_queue;
+    List sparse_queue;
+    
+    public Logger(CANJaguar fl, CANJaguar bl, CANJaguar br, CANJaguar fr, CANJaguar pickup, Shooter sh, Joystick l, Joystick r, Joystick o, Mecanum m)
     {
+        this.fl = fl;
+        this.bl = bl;
+        this.br = br;
+        this.fr = fr;
+        this.pickup = pickup;
+        this.sh = sh;
+        this.joy_left = l;
+        this.joy_right = r;
+        this.joy_op = o;
+        this.mec = m;        
+        frequent_queue = new List();
+        sparse_queue = new List();
         Calendar cal = Calendar.getInstance();
         String f_name, s_name;
         f_name = "log_" + cal.getTime().getTime();
@@ -41,18 +65,18 @@ public class Logger
     
     public void write_f(String line)
     {
-        logger.write_frequent_log(line);
+        frequent_queue.add(line);
     }
     
     public void write_s(String line)
     {
-        logger.write_sparse_log(line);
+        sparse_queue.add(line);
     }
     
     public void start()
     {
-        logger.start();
         start_logging();
+        logger.start();
     }
     
     public void start_logging()
@@ -85,28 +109,97 @@ public class Logger
             }
         }
         
-        public synchronized void write_frequent_log(String line)
+        public void run()
         {
-            if (is_logging)
+//            System.out.println("Running Logging Thread");
+            while(is_logging)
             {
-                try {
-                    freq_log.writeUTF(line + "%n");
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                long loop_time = System.currentTimeMillis();
+//                System.out.println("LOOOOP");
+                if (frequent_queue.size() > 12)
+                {
+                    System.out.println("Flushing Frequent Queue");
+                    while (frequent_queue.size() > 0)
+                    {
+                        try {
+                            freq_log.writeUTF(((String)frequent_queue.get(0)));
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                        frequent_queue.remove(0);
+                    }
+                }
+                if (sparse_queue.size() > 12)
+                {
+                    System.out.println("Flushing Sparse Queue");
+                    while (sparse_queue.size() > 0)
+                    {
+                        try {
+                            sparse_log.writeUTF(((String)sparse_queue.get(0)));
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                        sparse_queue.remove(0);
+                    }
+                }
+                gen_add_freq_line();
+                
+                if (frequent_queue.size() > 0)
+                {
+                    try {
+                        freq_log.writeUTF(((String)frequent_queue.get(0)));
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+//                    System.out.println("Wrote Freqeuent Log: " + ((String)frequent_queue.get(0)));
+                    frequent_queue.remove(0);
+                }
+                if (sparse_queue.size() > 0)
+                {
+                    try {
+                        sparse_log.writeUTF(((String)sparse_queue.get(0)));
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+//                    System.out.println("Wrote Sparse Log: " + ((String)sparse_queue.get(0)));
+                    sparse_queue.remove(0);
+                }
+                if (System.currentTimeMillis() - loop_time > 5)
+                {
+//                    System.out.println("Logger loop: " + (System.currentTimeMillis() - loop_time));
                 }
             }
         }
         
-        public synchronized void write_sparse_log(String line)
+        public void gen_add_freq_line()
         {
-            if (is_logging)
-            {
-                try {
-                    sparse_log.writeUTF(line + "%n");
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+            long start_time = System.currentTimeMillis();
+            String log_line = "";
+            try {
+                
+//                log_line = log_line + "Front_Left: " + fl.getSpeed() + " " + fl.getBusVoltage() + " " + fl.getOutputVoltage() + " " + fl.getOutputCurrent() + " " + fl.getTemperature() + " ";
+//                log_line = log_line + "Back_Left: " + bl.getSpeed() + " " + bl.getBusVoltage() + " " + bl.getOutputVoltage() + " " + bl.getOutputCurrent() + " " + bl.getTemperature() + " ";
+//                log_line = log_line + "Back_Right: " + br.getSpeed() + " " + br.getBusVoltage() + " " + br.getOutputVoltage() + " " + br.getOutputCurrent() + " " + br.getTemperature() + " ";
+//                log_line = log_line + "Front_Right: " + fr.getSpeed() + " " + fr.getBusVoltage() + " " + fr.getOutputVoltage() + " " + fr.getOutputCurrent() + " " + fr.getTemperature() + " ";
+
+                log_line = log_line + "Joystick axes: " + (-joy_left.getY()) + " " + joy_left.getX() + " " + joy_right.getX() + " ";
+                log_line = log_line + "Motor Outputs: " + mec.get_front_left() + " " + mec.get_back_left() + " " + mec.get_back_right() + " " + mec.get_front_right() + " ";
+                
+                log_line = log_line + "Front_Left: " + fl.getOutputVoltage() + " " + fl.getOutputCurrent() + " " + fl.getTemperature() + " ";
+                log_line = log_line + "Back_Left: " + bl.getOutputVoltage() + " " + bl.getOutputCurrent() + " " + bl.getTemperature() + " ";
+                log_line = log_line + "Back_Right: " + br.getOutputVoltage() + " " + br.getOutputCurrent() + " " + br.getTemperature() + " ";
+                log_line = log_line + "Front_Right: " + fr.getOutputVoltage() + " " + fr.getOutputCurrent() + " " + fr.getTemperature() + " ";
+
+                log_line = log_line + "Pickup: " + pickup.getSpeed() + " ";
+            } catch (CANTimeoutException ex) {
+                ex.printStackTrace();
             }
+
+            log_line = log_line + "Shooter :" + sh.get_shooter_speed() + " " + sh.get_angle();
+            
+            log_line = System.currentTimeMillis() + " " + log_line + "%n";
+            frequent_queue.add(log_line);
+//            System.out.println("freq_gen_time: " + (System.currentTimeMillis() - start_time));
         }
     }
 }

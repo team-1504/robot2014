@@ -143,7 +143,7 @@ public class RobotMain extends SimpleRobot
         ds = DriverStation.getInstance();
         ds_LCD = DriverStationLCD.getInstance();
         
-        logger = new Logger();
+        logger = new Logger(front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar, pick_up_jaguar, shooter, driver_left_joystick, driver_right_joystick, operator_joystick, mecanum);
         
         shooter.enable();
         
@@ -212,11 +212,12 @@ public class RobotMain extends SimpleRobot
     {
         logger.reset_files();
         logger.start_logging();
+        logger.start();
         boolean photon_cannon_state = false;
         
         boolean last_trigger = false;
         
-        long loop_time = System.currentTimeMillis();
+        long last_time = System.currentTimeMillis();
         
         shooter.re_enable();
         
@@ -225,8 +226,8 @@ public class RobotMain extends SimpleRobot
         
         while(isOperatorControl() && isEnabled())
         {
-            System.out.println(System.currentTimeMillis() - loop_time);
-            loop_time = System.currentTimeMillis();
+            System.out.println("Loop Time: " + (System.currentTimeMillis() - last_time));
+            last_time = System.currentTimeMillis();
             //Com Debugging
 //            Object[] packet = new Object[1];
 //            packet[0] = new Long(System.currentTimeMillis() - start_time);
@@ -269,6 +270,10 @@ public class RobotMain extends SimpleRobot
                 mecanum.set_front(270);
             }
             
+            
+//            System.out.println("After rotation: " + (System.currentTimeMillis() - last_time));
+//            last_time = System.currentTimeMillis();
+            
             double[] commands = new double[3];
             if (is_automated)
             {
@@ -286,6 +291,9 @@ public class RobotMain extends SimpleRobot
                 commands[2] = driver_left_joystick.getTrigger()? -1*driver_right_joystick.getX(): -0.5 * driver_right_joystick.getX();
                 mecanum.drive_mecanum(commands);
             }
+            
+//            System.out.println("After Mecanum Handling: " + (System.currentTimeMillis() - last_time));
+//            last_time = System.currentTimeMillis();
             
             //Pickup Handling
             if(operator_joystick.getRawButton(RobotMap.PICK_UP_BUTTON_STOP))
@@ -305,17 +313,32 @@ public class RobotMain extends SimpleRobot
                 pick_up.set_speed(RobotMap.PICK_UP_MAX);
             }
             
+//            System.out.println("After Pickup Handling: " + (System.currentTimeMillis() - last_time));
+//            last_time = System.currentTimeMillis();
+            
             //Shooter Handling
             if (!last_trigger && operator_joystick.getTrigger() && operator_joystick.getRawButton(RobotMap.SHOOTER_TOSS_BUTTON))
             {
                 logger.write_s(System.currentTimeMillis() + " Fired");
                 shooter.fire(true, 1);
             }
-            else if (!last_trigger && operator_joystick.getTrigger(GenericHID.Hand.kLeft))
+            else if (!last_trigger && operator_joystick.getTrigger())
             {
                 shooter.fire(true, 0);
             }
+            else if (operator_joystick.getTrigger())
+            {
+                
+            }
+            else
+            {
+                shooter.fire(false);
+            }
+            last_trigger = operator_joystick.getTrigger();
 
+//            System.out.println("After Shooter Handling: " + (System.currentTimeMillis() - last_time));
+//            last_time = System.currentTimeMillis();
+            
             //Photon Cannon Handling
             if (photon_cannon_toggle.is_rising())
             {
@@ -330,6 +353,9 @@ public class RobotMain extends SimpleRobot
                     photon_cannon.set(Relay.Value.kOff);
                 }
             }
+            
+//            System.out.println("After Photon Cannon Stuffs: " + (System.currentTimeMillis() - last_time));
+//            last_time = System.currentTimeMillis();
             
             //Set Solenoids
             if (operator_joystick.getRawButton(RobotMap.PICKUP_SOLENOID_BUTTON_RETRACT))        
@@ -346,6 +372,9 @@ public class RobotMain extends SimpleRobot
                 pickup_sol_ex_1.set(pick_up.get_position());
                 pickup_sol_ret_1.set(!pick_up.get_position());
             }
+            
+//            System.out.println("After Pickup Solenoid Handling: " + (System.currentTimeMillis() - last_time));
+//            last_time = System.currentTimeMillis();
             
 //            Object[] packet_out = new Object[5];
 //            packet_out[0] = new Long(System.currentTimeMillis());
@@ -367,28 +396,27 @@ public class RobotMain extends SimpleRobot
                 
                 pick_up_jaguar.setX(pick_up.get_speed());
                 
+//                System.out.println("After Jaguar Setting: " + (System.currentTimeMillis() - last_time));
+//                last_time = System.currentTimeMillis();
+                
                 //Write to Driver's Station
                 ds_LCD.clear();
-                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag FL Speed: " + front_left_jaguar.getSpeed());
-                ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Jag BL Speed: " + back_left_jaguar.getSpeed());
-                ds_LCD.println(DriverStationLCD.Line.kUser3, 1, "Jag BR Speed: " + back_right_jaguar.getSpeed());
-                ds_LCD.println(DriverStationLCD.Line.kUser4, 1, "Jag FR Speed: " + front_right_jaguar.getSpeed());
+//                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag FL Speed: " + front_left_jaguar.getSpeed());
+//                ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Jag BL Speed: " + back_left_jaguar.getSpeed());
+//                ds_LCD.println(DriverStationLCD.Line.kUser3, 1, "Jag BR Speed: " + back_right_jaguar.getSpeed());
+//                ds_LCD.println(DriverStationLCD.Line.kUser4, 1, "Jag FR Speed: " + front_right_jaguar.getSpeed());
                 
-                ds_LCD.println(DriverStationLCD.Line.kUser5, 1, "Shooter Pot: " + shooter.get_angle());
+                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Shooter Pot: " + shooter.get_angle());
                 
                 ds_LCD.updateLCD();
                 
-                //Update Log File
-                String log_line = "";
-                log_line = log_line + "Front_Left: " + front_left_jaguar.getSpeed() + " " + front_left_jaguar.getBusVoltage() + " " + front_left_jaguar.getOutputVoltage() + " " + front_left_jaguar.getOutputCurrent() + " " + front_left_jaguar.getTemperature() + " ";
-                log_line = log_line + "Back_Left: " + back_left_jaguar.getSpeed() + " " + back_left_jaguar.getBusVoltage() + " " + back_left_jaguar.getOutputVoltage() + " " + back_left_jaguar.getOutputCurrent() + " " + back_left_jaguar.getTemperature() + " ";
-                log_line = log_line + "Back_Right: " + back_right_jaguar.getSpeed() + " " + back_right_jaguar.getBusVoltage() + " " + back_right_jaguar.getOutputVoltage() + " " + back_right_jaguar.getOutputCurrent() + " " + back_right_jaguar.getTemperature() + " ";
-                log_line = log_line + "Front_Right: " + front_right_jaguar.getSpeed() + " " + front_right_jaguar.getBusVoltage() + " " + front_right_jaguar.getOutputVoltage() + " " + front_right_jaguar.getOutputCurrent() + " " + front_right_jaguar.getTemperature() + " ";
-
-                log_line = log_line + "Pickup: " + pick_up_jaguar.getSpeed() + " ";
+//                System.out.println("After LCD Update: " + (System.currentTimeMillis() - last_time));
+//                last_time = System.currentTimeMillis();
                 
-                log_line = log_line + "Shooter :" + shooter.get_shooter_speed() + " " + shooter.get_angle();
-                logger.write_f(System.currentTimeMillis() + log_line);
+                //Update Log File
+                
+//                System.out.println("After Logging Stuff: " + (System.currentTimeMillis() - last_time));
+//                last_time = System.currentTimeMillis();
             } 
             catch (CANTimeoutException ex)
             {
@@ -396,6 +424,7 @@ public class RobotMain extends SimpleRobot
             }
         }
         shooter.disable();
+        logger.stop_logging();
     }
     /**
      * This function is called once each time the robot enters test mode.

@@ -45,11 +45,11 @@ public class Mecanum
     
     public double[] detents(double[] dircn)
     {
-        double theta = MathUtils.atan2(-dircn[0], dircn[1]);
-        double dx = correct_x(theta) * distance(dircn[1], -dircn[0]) * mult_correction;
-        double dy = correct_y(theta) * distance(dircn[1], -dircn[0]) * mult_correction;
+        double theta = MathUtils.atan2(dircn[0], dircn[1]);
+        double dx = correct_x(theta) * distance(dircn[1], dircn[0]) * mult_correction;
+        double dy = correct_y(theta) * distance(dircn[1], dircn[0]) * mult_correction;
         
-        dircn[0] = MathUtils.pow(-dircn[0], 3) + dy;
+        dircn[0] = MathUtils.pow(dircn[0], 3) + dy;
         dircn[1] = MathUtils.pow(dircn[1], 3) + dx;
         
         System.out.println("detented vals: " + dircn[0] + " " + dircn[1]);
