@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import edu.wpi.first.wpilibj.networktables2.util.List;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Calendar;
 import javax.microedition.io.Connector;
 
@@ -27,13 +28,14 @@ public class Logger
     private Shooter sh;
     private Joystick joy_left, joy_right, joy_op;
     private Mecanum mec;
+    private HMC5883L_I2C comp;
     private boolean is_logging;
     private boolean write_freq;
     
     List frequent_queue;
     List sparse_queue;
     
-    public Logger(CANJaguar fl, CANJaguar bl, CANJaguar br, CANJaguar fr, CANJaguar pickup, Shooter sh, Joystick l, Joystick r, Joystick o, Mecanum m)
+    public Logger(CANJaguar fl, CANJaguar bl, CANJaguar br, CANJaguar fr, CANJaguar pickup, Shooter sh, Joystick l, Joystick r, Joystick o, Mecanum m, HMC5883L_I2C c)
     {
         this.fl = fl;
         this.bl = bl;
@@ -44,23 +46,18 @@ public class Logger
         this.joy_left = l;
         this.joy_right = r;
         this.joy_op = o;
-        this.mec = m;        
+        this.mec = m;
+        this.comp = c;
         frequent_queue = new List();
         sparse_queue = new List();
-        Calendar cal = Calendar.getInstance();
-        String f_name, s_name;
-        f_name = "log_" + cal.getTime().getTime();
-        s_name = f_name + "_sparse";
-        logger = new LoggingThread(f_name + ".log", s_name + ".log");
     }
     
-    public void reset_files()
+    public void reset_file()
     {
         Calendar cal = Calendar.getInstance();
-        String f_name, s_name;
+        String f_name;
         f_name = "log_" + cal.getTime().getTime();
-        s_name = f_name + "_sparse";
-        logger = new LoggingThread(f_name + ".log", s_name + ".log");
+        logger = new LoggingThread(f_name + ".log");
     }
     
     public void write_f(String line)
@@ -91,22 +88,20 @@ public class Logger
     
     private class LoggingThread extends Thread
     {
-        private DataOutputStream freq_log;
-        private DataOutputStream sparse_log;
+        private PrintStream log_stream;
         
-        public LoggingThread(String f_log_name, String s_log_name)
+        public LoggingThread(String f_log_name)
         {
-            FileConnection fc_f, fc_s;
+            FileConnection fc;
             try {
-                fc_f = (FileConnection)Connector.open("file:///"+f_log_name, Connector.WRITE);
-                fc_s = (FileConnection)Connector.open("file:///"+s_log_name, Connector.WRITE);
-                fc_f.create();
-                fc_s.create();
-                freq_log = fc_f.openDataOutputStream();
-                sparse_log = fc_s.openDataOutputStream();
+                fc = (FileConnection)Connector.open("file:///"+f_log_name, Connector.WRITE);
+                fc.create();
+                DataOutputStream f_log = fc.openDataOutputStream();
+                log_stream = new PrintStream(f_log);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
+            log_stream.println("Timestamp Driver_Joy_Y Driver_Joy_X Driver_Joy_W FL_Out BL_Out BR_Out FR_Out FL_Jag_Speed FL_Bus_Voltage FL_Out_Voltage FL_Out_Current FL_Temp BL_Jag_Speed BL_Bus_Voltage BL_Out_Voltage BL_Out_Current BL_Temp BR_Jag_Speed BR_Bus_Voltage BR_Out_Voltage BR_Out_Current BR_Temp FR_Jag_Speed FR_Bus_Voltage FR_Out_Voltage FR_Out_Current FR_Temp");
         }
         
         public void run()
@@ -121,11 +116,7 @@ public class Logger
                     System.out.println("Flushing Frequent Queue");
                     while (frequent_queue.size() > 0)
                     {
-                        try {
-                            freq_log.writeUTF(((String)frequent_queue.get(0)));
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
+                        log_stream.println(frequent_queue.get(0));
                         frequent_queue.remove(0);
                     }
                 }
@@ -134,11 +125,7 @@ public class Logger
                     System.out.println("Flushing Sparse Queue");
                     while (sparse_queue.size() > 0)
                     {
-                        try {
-                            sparse_log.writeUTF(((String)sparse_queue.get(0)));
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
+                        log_stream.println("S: " + sparse_queue.get(0));
                         sparse_queue.remove(0);
                     }
                 }
@@ -146,27 +133,15 @@ public class Logger
                 
                 if (frequent_queue.size() > 0)
                 {
-                    try {
-                        freq_log.writeUTF(((String)frequent_queue.get(0)));
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
+                    log_stream.println(frequent_queue.get(0));
 //                    System.out.println("Wrote Freqeuent Log: " + ((String)frequent_queue.get(0)));
                     frequent_queue.remove(0);
                 }
                 if (sparse_queue.size() > 0)
                 {
-                    try {
-                        sparse_log.writeUTF(((String)sparse_queue.get(0)));
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
+                    log_stream.println("S: " + sparse_queue.get(0));
 //                    System.out.println("Wrote Sparse Log: " + ((String)sparse_queue.get(0)));
                     sparse_queue.remove(0);
-                }
-                if (System.currentTimeMillis() - loop_time > 5)
-                {
-//                    System.out.println("Logger loop: " + (System.currentTimeMillis() - loop_time));
                 }
             }
         }
@@ -176,28 +151,24 @@ public class Logger
             long start_time = System.currentTimeMillis();
             String log_line = "";
             try {
+                log_line = log_line + (-joy_left.getY()) + " " + joy_left.getX() + " " + joy_right.getX() + " ";
+                log_line = log_line + mec.get_front_left() + " " + mec.get_back_left() + " " + mec.get_back_right() + " " + mec.get_front_right() + " ";
                 
-//                log_line = log_line + "Front_Left: " + fl.getSpeed() + " " + fl.getBusVoltage() + " " + fl.getOutputVoltage() + " " + fl.getOutputCurrent() + " " + fl.getTemperature() + " ";
-//                log_line = log_line + "Back_Left: " + bl.getSpeed() + " " + bl.getBusVoltage() + " " + bl.getOutputVoltage() + " " + bl.getOutputCurrent() + " " + bl.getTemperature() + " ";
-//                log_line = log_line + "Back_Right: " + br.getSpeed() + " " + br.getBusVoltage() + " " + br.getOutputVoltage() + " " + br.getOutputCurrent() + " " + br.getTemperature() + " ";
-//                log_line = log_line + "Front_Right: " + fr.getSpeed() + " " + fr.getBusVoltage() + " " + fr.getOutputVoltage() + " " + fr.getOutputCurrent() + " " + fr.getTemperature() + " ";
+                log_line = log_line + fl.getSpeed() + " " + fl.getBusVoltage() + " " + fl.getOutputVoltage() + " " + fl.getOutputCurrent() + " " + fl.getTemperature() + " ";
+                log_line = log_line + bl.getSpeed() + " " + bl.getBusVoltage() + " " + bl.getOutputVoltage() + " " + bl.getOutputCurrent() + " " + bl.getTemperature() + " ";
+                log_line = log_line + br.getSpeed() + " " + br.getBusVoltage() + " " + br.getOutputVoltage() + " " + br.getOutputCurrent() + " " + br.getTemperature() + " ";
+                log_line = log_line + fr.getSpeed() + " " + fr.getBusVoltage() + " " + fr.getOutputVoltage() + " " + fr.getOutputCurrent() + " " + fr.getTemperature() + " ";
 
-                log_line = log_line + "Joystick axes: " + (-joy_left.getY()) + " " + joy_left.getX() + " " + joy_right.getX() + " ";
-                log_line = log_line + "Motor Outputs: " + mec.get_front_left() + " " + mec.get_back_left() + " " + mec.get_back_right() + " " + mec.get_front_right() + " ";
-                
-                log_line = log_line + "Front_Left: " + fl.getOutputVoltage() + " " + fl.getOutputCurrent() + " " + fl.getTemperature() + " ";
-                log_line = log_line + "Back_Left: " + bl.getOutputVoltage() + " " + bl.getOutputCurrent() + " " + bl.getTemperature() + " ";
-                log_line = log_line + "Back_Right: " + br.getOutputVoltage() + " " + br.getOutputCurrent() + " " + br.getTemperature() + " ";
-                log_line = log_line + "Front_Right: " + fr.getOutputVoltage() + " " + fr.getOutputCurrent() + " " + fr.getTemperature() + " ";
-
-                log_line = log_line + "Pickup: " + pickup.getSpeed() + " ";
+                log_line = log_line + pickup.getSpeed() + " ";
             } catch (CANTimeoutException ex) {
                 ex.printStackTrace();
             }
 
-            log_line = log_line + "Shooter :" + sh.get_shooter_speed() + " " + sh.get_angle();
+            log_line = log_line + sh.get_shooter_speed() + " " + sh.get_angle();
             
-            log_line = System.currentTimeMillis() + " " + log_line + "%n";
+//            log_line = log_line + "Compass: " + comp.getHeading();
+            
+            log_line = System.currentTimeMillis() + " " + log_line;
             frequent_queue.add(log_line);
 //            System.out.println("freq_gen_time: " + (System.currentTimeMillis() - start_time));
         }

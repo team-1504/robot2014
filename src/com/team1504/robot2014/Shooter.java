@@ -37,8 +37,8 @@ public class Shooter
     
     private ShooterThread sh_thread;
     
-    private Solenoid solenoid_1 = RobotMain.pickup_sol_ex_2;
-    private Solenoid solenoid_2 = RobotMain.pickup_sol_ret_2;
+    private Solenoid solenoid_1 = RobotMain.latch_solenoid_extend;
+    private Solenoid solenoid_2 = RobotMain.latch_solenoid_retract;
     private boolean solenoid = true;
     
     public Shooter()
@@ -71,6 +71,11 @@ public class Shooter
     {
         solenoid_1.set(latch_down);
         solenoid_2.set(!latch_down);
+    }
+    
+    public void set_max_speed(double speed)
+    {
+        max_speed = speed;
     }
     
     public void enable()
@@ -163,6 +168,10 @@ public class Shooter
                 
                 while((Math.abs(shooter_angle - (stop_angle)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && shooter_angle > stop_angle) && sh.is_firing())
                 {
+                    if (Math.abs(shooter_angle - stop_angle) < 0.3)
+                    {
+                        max_speed = 1.0;
+                    }
                     update_angle();
 //                    System.out.println("S: is firing -- " + value);
                     solenoid = false;
@@ -202,19 +211,19 @@ public class Shooter
                 update_angle();
                 if (shooter_angle == 0)
                 {
-                    set_shooter_speed(-0.3);
+                    set_shooter_speed(-0.2);
                 }
-                else if (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL)) < 0.3 )
+                else if (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL)) < 0.1 )
                 {
-                    set_shooter_speed(-8.0);
+                    set_shooter_speed(-0.6);
                 }
                 else
                 {
                     set_shooter_speed(-0.3);
                 }
             }
-            set_shooter_speed(0.0);
             set_latch(true);
+            set_shooter_speed(0.0);
         }
         
         private void set_shooter_speed(double speed)
