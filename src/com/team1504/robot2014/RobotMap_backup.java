@@ -10,7 +10,7 @@ package com.team1504.robot2014;
  *
  * @author Gavaga
  */
-public class RobotMap 
+public class RobotMap_backup
 {
     public static final double COMPASS_ANGLE_REFERENCE = 0;
     
@@ -25,10 +25,10 @@ public class RobotMap
     
     public static final int PICK_UP_JAGUAR_PORT = 30;
     
-    public static final int PICKUP_EXTEND_PORT = 8;
-    public static final int PICKUP_RETRACT_PORT = 6;
-    public static final int LATCH_EXTEND_PORT = 7;
-    public static final int LATCH_RETRACT_PORT = 5;
+    public static final int PICKUP_EXTEND_1_PORT = 2;
+    public static final int PICKUP_EXTEND_2_PORT = 4;
+    public static final int PICKUP_RETRACT_1_PORT = 1;
+    public static final int PICKUP_RETRACT_2_PORT = 3;
     
     public static final int PICKUP_SOLENOID_BUTTON_RETRACT = 11;
     public static final int PICKUP_SOLENOID_BUTTON_EXTEND = 9;
@@ -49,9 +49,9 @@ public class RobotMap
     public static final int SHOOTER_TOSS_BUTTON = 2;
     
     public static final double SHOOTER_TOSS_SPEED_MAX = 0.75;
-    public static final double SHOOTER_GOAL_SPEED_MAX = 0.808594;
-    public static final double SHOOTER_POT_BASE_VAL = 5.80;
-    public static final double SHOOTER_POT_RELEASE_VAL_GOAL = 4.55;
+    public static final double SHOOTER_GOAL_SPEED_MAX = 0.88;
+    public static final double SHOOTER_POT_BASE_VAL = 5.82;
+    public static final double SHOOTER_POT_RELEASE_VAL_GOAL = 4.6;
     public static final double SHOOTER_POT_RELEASE_VAL_TOSS = 4.9;
     public static final double SHOOTER_ANGLE_TOLERANCE = 0.05;
     

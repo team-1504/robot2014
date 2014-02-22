@@ -119,10 +119,10 @@ public class RobotMain extends SimpleRobot
         }
         
         
-        pickup_solenoid_extend = new Solenoid(RobotMap.PICKUP_EXTEND_1_PORT);
-        latch_solenoid_extend = new Solenoid(RobotMap.PICKUP_EXTEND_2_PORT);
-        pickup_solenoid_retract = new Solenoid(RobotMap.PICKUP_RETRACT_1_PORT);
-        latch_solenoid_retract = new Solenoid(RobotMap.PICKUP_RETRACT_2_PORT);
+        pickup_solenoid_extend = new Solenoid(RobotMap.PICKUP_EXTEND_PORT);
+        latch_solenoid_extend = new Solenoid(RobotMap.LATCH_EXTEND_PORT);
+        pickup_solenoid_retract = new Solenoid(RobotMap.PICKUP_RETRACT_PORT);
+        latch_solenoid_retract = new Solenoid(RobotMap.LATCH_RETRACT_PORT);
 
         fire_button = new ToggleButton(operator_joystick, 1);
         
@@ -133,8 +133,7 @@ public class RobotMain extends SimpleRobot
         toggle_front = new ToggleButton(driver_left_joystick, RobotMap.ROTATION_BUTTON_DEFAULT);
         
         compressor = new Compressor(RobotMap.PRESSURE_DIGITAL_INPUT, RobotMap.COMPRESSOR_RELAY_NUM);
-//        pi = new ComModule(RobotMap.RASPBERRY_PI_IP_ADDRESS, 1504);
-//        pi.start();
+        pi = new ComModule(RobotMap.RASPBERRY_PI_IP_ADDRESS, 1504);
         
         mecanum = new Mecanum();
         pick_up = new PickUp();
@@ -240,6 +239,9 @@ public class RobotMain extends SimpleRobot
         boolean photon_cannon_state = false;
         boolean has_reset = true;
         
+        double throttle;
+        pi.start();
+        
         long pick_up_extend_time = System.currentTimeMillis();
         long last_time = System.currentTimeMillis();
         
@@ -273,22 +275,24 @@ public class RobotMain extends SimpleRobot
             if (driver_right_joystick.getRawButton(RobotMap.ROTATION_BUTTON_DEFAULT))
             {
 //                logger.write_s(System.currentTimeMillis() + " Swapped front");
-                mecanum.set_front(0);
+                mecanum.set_front(180);
             }
             else if (driver_right_joystick.getRawButton(RobotMap.ROTATION_BUTTON_90))
             {
-                mecanum.set_front(90);
+                mecanum.set_front(270);
             }        
             else if (driver_right_joystick.getRawButton(RobotMap.ROTATION_BUTTON_180))
             {
-                mecanum.set_front(180);
+                mecanum.set_front(0);
             }
             else if (driver_right_joystick.getRawButton(RobotMap.ROTATION_BUTTON_270))
             {
-                mecanum.set_front(270);
+                mecanum.set_front(90);
             }
             
-            shooter.set_max_speed(((-operator_joystick.getThrottle() + 1.0) / 4.0) + 0.5);
+            throttle = ((-operator_joystick.getThrottle() + 1.0) / 4.0) + 0.5;
+            shooter.set_max_speed(throttle);
+            System.out.println("Throttle: " + throttle);
                    
             
 //            System.out.println("After rotation: " + (System.currentTimeMillis() - last_time));
@@ -428,13 +432,12 @@ public class RobotMain extends SimpleRobot
                 
                 //Write to Driver's Station
                 ds_LCD.clear();
-//                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Jag FL Speed: " + front_left_jaguar.getSpeed());
+                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "" + front_left_jaguar.getBusVoltage());
 //                ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Jag BL Speed: " + back_left_jaguar.getSpeed());
 //                ds_LCD.println(DriverStationLCD.Line.kUser3, 1, "Jag BR Speed: " + back_right_jaguar.getSpeed());
 //                ds_LCD.println(DriverStationLCD.Line.kUser4, 1, "Jag FR Speed: " + front_right_jaguar.getSpeed());
-                
-                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Shooter Pot: " + shooter.get_angle());
-                ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Shooter Throttle: " + (((-operator_joystick.getThrottle() + 1.0) / 4.0) + 0.5));
+                ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Shooter Pot: " + shooter.get_angle());
+                ds_LCD.println(DriverStationLCD.Line.kUser3, 1, "Shooter Throttle: " + throttle);
                 
                 ds_LCD.updateLCD();
                 

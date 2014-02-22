@@ -6,10 +6,16 @@
 
 package com.team1504.robot2014;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.Vector;
 import javax.microedition.io.Connector;
 import javax.microedition.io.Datagram;
+import javax.microedition.io.ServerSocketConnection;
+import javax.microedition.io.StreamConnection;
 import javax.microedition.io.UDPDatagramConnection;
 
 /**
@@ -76,13 +82,31 @@ public class ComModule
     
     private class PiComModule extends Thread
     {
-        UDPDatagramConnection pi_com;
+        boolean is_init;
+        InputStream com_in;
+        PrintStream com_out;
+        
+        String addr;
+        int prt;
         
         public PiComModule(String address, int port)
         {
+            addr = address;
+            prt = port;
+            is_init = false;
+        }
+        
+        public void init()
+        {
+            is_init = true;
+            ServerSocketConnection pi_com;
+            StreamConnection com_con;
             try 
             {
-                pi_com = (UDPDatagramConnection) Connector.open("datagram://" + address + ":" + port);
+                pi_com = (ServerSocketConnection) Connector.open("socket://" + addr + ":" + prt);
+                com_con = pi_com.acceptAndOpen();
+                com_in = com_con.openInputStream();
+                com_out = new PrintStream(com_con.openDataOutputStream());
             } 
             catch (IOException ex) 
             {
@@ -92,10 +116,10 @@ public class ComModule
         
         public void run()
         {
+            init();
             String in = "";
             String out = "";
-            
-            Datagram out_d;
+            byte[] in_raw = new byte[256];
             
             if(is_transmitting)
             {
@@ -138,15 +162,8 @@ public class ComModule
                         out += val;
                     }
                 }
-                try 
-                {
-                    out_d = pi_com.newDatagram(out.getBytes(), out.length());
-                    pi_com.send(out_d);
-                } 
-                catch (IOException ex) 
-                {
-                    ex.printStackTrace();
-                }
+                com_out.print(out.getBytes());
+                System.out.println("THREAD_COM: packet_sent: " + out);
             }
             if(is_listening)
             {
@@ -155,12 +172,15 @@ public class ComModule
                 {
                     size += RobotMap.INDEXED_TYPE_SIZES[RobotMap.PACKET_FORMAT[i]];
                 }
-                Datagram in_d;
                 try 
                 {
-                    in_d = pi_com.newDatagram(size);
-                    pi_com.receive(in_d);
-                    in = new String(in_d.getData());
+                    int n = com_in.read(in_raw);
+                    if (n < 0)
+                    {
+                        System.out.println("THREAD_COM: error reading from stream");
+                    }
+                    in = new String(in_raw);
+                    System.out.println("THREAD_COM: raw_packet_get:" + in);
                 } 
                 catch (IOException ex) 
                 {

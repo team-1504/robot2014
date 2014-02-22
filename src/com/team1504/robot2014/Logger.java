@@ -159,7 +159,7 @@ public class Logger
                 log_line = log_line + br.getSpeed() + " " + br.getBusVoltage() + " " + br.getOutputVoltage() + " " + br.getOutputCurrent() + " " + br.getTemperature() + " ";
                 log_line = log_line + fr.getSpeed() + " " + fr.getBusVoltage() + " " + fr.getOutputVoltage() + " " + fr.getOutputCurrent() + " " + fr.getTemperature() + " ";
 
-                log_line = log_line + pickup.getSpeed() + " ";
+//                log_line = log_line + pickup.getSpeed() + " ";
             } catch (CANTimeoutException ex) {
                 ex.printStackTrace();
             }
