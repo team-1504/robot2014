@@ -6,17 +6,17 @@
 
 package com.team1504.robot2014;
 
-import java.io.DataInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Vector;
 import javax.microedition.io.Connector;
-import javax.microedition.io.Datagram;
 import javax.microedition.io.ServerSocketConnection;
+import javax.microedition.io.SocketConnection;
 import javax.microedition.io.StreamConnection;
-import javax.microedition.io.UDPDatagramConnection;
 
 /**
  *
@@ -29,7 +29,7 @@ import javax.microedition.io.UDPDatagramConnection;
  */
 public class ComModule
 {
-    private static Vector packets_in;
+    private static Vector packet_in_buffer;
     private static Object[] packet_out;
     
     private static boolean is_transmitting;
@@ -63,15 +63,23 @@ public class ComModule
     {
         int index = 0;
         long max_time = 0;
-        for (int i = 0; i < packets_in.size(); ++i)
+        for (int i = 0; i < packet_in_buffer.size(); ++i)
         {
-            if (((Integer)((Object[])packets_in.elementAt(i))[0]).intValue() > max_time)
+            long time = ((Long)((Object[])packet_in_buffer.elementAt(i))[0]).longValue();
+            if (time > max_time)
             {
                 index = i;
-                max_time = ((Long)((Object[])packets_in.elementAt(i))[0]).longValue();
+                max_time = time;
             }
         }
-        return ((Object[])packets_in.elementAt(index));
+        Object[] packet = ((Object[])packet_in_buffer.elementAt(index));
+        clear_packet_buffer();
+        return packet;
+    }
+    
+    public void clear_packet_buffer()
+    {
+        packet_in_buffer.removeAllElements();
     }
     
     public void update_out_packet(Object[] packet)
@@ -84,7 +92,7 @@ public class ComModule
     {
         boolean is_init;
         InputStream com_in;
-        PrintStream com_out;
+        BufferedOutputStream com_out;
         
         String addr;
         int prt;
@@ -106,7 +114,7 @@ public class ComModule
                 pi_com = (ServerSocketConnection) Connector.open("socket://" + addr + ":" + prt);
                 com_con = pi_com.acceptAndOpen();
                 com_in = com_con.openInputStream();
-                com_out = new PrintStream(com_con.openDataOutputStream());
+                com_out = com_con.openDataOutputStream();
             } 
             catch (IOException ex) 
             {
@@ -162,7 +170,11 @@ public class ComModule
                         out += val;
                     }
                 }
-                com_out.print(out.getBytes());
+                try {
+                    com_out.write(out.getBytes());
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
                 System.out.println("THREAD_COM: packet_sent: " + out);
             }
             if(is_listening)
@@ -235,7 +247,7 @@ public class ComModule
                 }
             }
             
-            packets_in.addElement(packet_in);
+            packet_in_buffer.addElement(packet_in);
         }
     }
 }

@@ -23,16 +23,6 @@ public class RobotMap
     public static final int BACK_RIGHT_JAGUAR_PORT = 12;
     public static final int FRONT_RIGHT_JAGUAR_PORT = 13;
     
-    public static final int PICK_UP_JAGUAR_PORT = 30;
-    
-    public static final int PICKUP_EXTEND_PORT = 8;
-    public static final int PICKUP_RETRACT_PORT = 6;
-    public static final int LATCH_EXTEND_PORT = 7;
-    public static final int LATCH_RETRACT_PORT = 5;
-    
-    public static final int PICKUP_SOLENOID_BUTTON_RETRACT = 11;
-    public static final int PICKUP_SOLENOID_BUTTON_EXTEND = 9;
-    
     public static final int ROTATION_BUTTON_DEFAULT = 3;
     public static final int ROTATION_BUTTON_90 = 5;
     public static final int ROTATION_BUTTON_180 = 2;
@@ -48,12 +38,23 @@ public class RobotMap
     public static final int SHOOTER_POT_MODULE_NUM = 5;
     public static final int SHOOTER_TOSS_BUTTON = 2;
     
-    public static final double SHOOTER_TOSS_SPEED_MAX = 0.75;
+    public static final int LATCH_EXTEND_PORT = 7;
+    public static final int LATCH_RETRACT_PORT = 5;
+    
     public static final double SHOOTER_GOAL_SPEED_MAX = 0.808594;
-    public static final double SHOOTER_POT_BASE_VAL = 5.80;
+    public static final double SHOOTER_TOSS_SPEED_MAX = 0.75;
     public static final double SHOOTER_POT_RELEASE_VAL_GOAL = 4.55;
     public static final double SHOOTER_POT_RELEASE_VAL_TOSS = 4.9;
+    public static final double SHOOTER_POT_BASE_VAL = 5.80;
     public static final double SHOOTER_ANGLE_TOLERANCE = 0.05;
+    
+    public static final int PICK_UP_JAGUAR_PORT = 30;
+    
+    public static final int PICKUP_EXTEND_PORT = 8;
+    public static final int PICKUP_RETRACT_PORT = 6;
+    
+    public static final int PICKUP_SOLENOID_BUTTON_RETRACT = 11;
+    public static final int PICKUP_SOLENOID_BUTTON_EXTEND = 9;
     
     public static final int PICK_UP_BUTTON_STOP = 3;
     public static final int PICK_UP_BUTTON_REVERSE = 5;

@@ -19,13 +19,29 @@ public class Mecanum
     private double back_left_val;
     private double front_right_val;
     private double back_right_val;
-    double mult_correction;
-    double rotation_offset;
-    double[] orbit_offset = new double[2];
+    
+    private boolean is_detented;
+    private boolean is_orbiting;
+    
+    private double mult_correction;
+    private double rotation_offset;
+    private double[] orbit_offset = new double[2];
     
     public Mecanum()
     {
+        is_detented = true;
+        is_orbiting = true;
         mult_correction = 0.25;
+    }
+    
+    public void is_orbiting(boolean orb)
+    {
+        is_orbiting = orb;
+    }
+    
+    public void is_detented(boolean det)
+    {
+        is_detented = det;
     }
     
     public void set_front(double rot_offset)
@@ -43,18 +59,36 @@ public class Mecanum
         this.mult_correction = mult_correction;
     }
     
+    public double[] null_zone(double[] dircn, double size)
+    {
+        double[] null_zone = new double[3];
+        for (int i = 0; i < 3; ++i)
+        {
+            null_zone[i] = Math.abs(dircn[i]) < size ? 0: dircn[i];
+        }
+        return null_zone;
+    }
+    
     public double[] detents(double[] dircn)
     {
+        double speed = distance(dircn[0], dircn[1]);
         double theta = MathUtils.atan2(dircn[0], dircn[1]);
-        double dx = correct_x(theta) * distance(dircn[1], dircn[0]) * mult_correction;
-        double dy = correct_y(theta) * distance(dircn[1], dircn[0]) * mult_correction;
+        double theta_n = ( (int)(8.0 * (theta / (2.0 * Math.PI)) + 0.5)) * (Math.PI / 4.0);
+//        double dx = correct_x(theta) * distance(dircn[1], dircn[0]) * mult_correction;
+//        double dy = correct_y(theta) * distance(dircn[1], dircn[0]) * mult_correction;
+//        
+        double[] detented = new double[3];
         
-        dircn[0] = MathUtils.pow(dircn[0], 3) + dy;
-        dircn[1] = MathUtils.pow(dircn[1], 3) + dx;
+//        detented[0] = MathUtils.pow(dircn[0], 3) + dy;
+//        detented[1] = MathUtils.pow(dircn[1], 3) + dx;
+//        detented[2] = dircn[2];
+        detented[0] = speed * Math.sin(theta_n);
+        detented[1] = speed * Math.cos(theta_n);
+        detented[2] = dircn[2];
         
         System.out.println("detented vals: " + dircn[0] + " " + dircn[1]);
         
-        return dircn;
+        return detented;
     }
     
     public double[] front_side(double[] dircn)
@@ -70,33 +104,35 @@ public class Mecanum
     {
         double x = orbit_offset[0];
         double y = orbit_offset[1];
-        double forward = dircn[0];
-        double right = dircn[1];
-        double ccw = dircn[2];
         
-        double p = Math.sqrt(((MathUtils.pow(y-1, 2) + (MathUtils.pow(1-x, 2))/Math.sqrt(2)))) * Math.cos(45*Math.PI/180 + MathUtils.atan2(y-1, 1-x));
-        double r = Math.sqrt(((MathUtils.pow(y+1, 2) + (MathUtils.pow(1-x, 2))/Math.sqrt(2)))) * Math.cos(-45*Math.PI/180 + MathUtils.atan2(y+1, 1-x));
-        double q = -Math.sqrt(((MathUtils.pow(y+1, 2) + (MathUtils.pow(-1-x, 2))/Math.sqrt(2)))) * Math.cos(45*Math.PI/180 + MathUtils.atan2(y+1, -1-x));
+        double[] k = {y-1, y+1, 
+                     1-x, -1-x};
         
-        double new_forward = (ccw * r + (forward - ccw) * q + forward * p)/(q + p);
-        double new_right = (-ccw * r + right * q - (-right-ccw) * p)/(q + p);
-        double new_ccw = (2 * ccw)/(q+p);
+        double p =  Math.sqrt( (k[0] * k[0] + k[2] * k[2]) / 2) * Math.cos( (Math.PI / 4) + MathUtils.atan2(k[0], k[2]));
+        double r =  Math.sqrt( (k[1] * k[1] + k[2] * k[2]) / 2) * Math.cos(-(Math.PI / 4) + MathUtils.atan2(k[1], k[2]));
+        double q = -Math.sqrt( (k[1] * k[1] + k[3] * k[3]) / 2) * Math.cos( (Math.PI / 4) + MathUtils.atan2(k[1], k[3]));
         
-        double[] directions = new double[3];
-        directions[0] = new_forward;
-        directions[1] = new_right;
-        directions[2] = new_ccw;
-        
-        return directions;
+        double[] corrected = new double[3];
+        corrected[0] = (dircn[2] * r + (dircn[0] - dircn[2]) * q + dircn[0] * p) / (q + p);
+        corrected[1] = (-dircn[2] * r + dircn[1] * q - (-dircn[1] - dircn[2]) * p) / (q + p);
+        corrected[2] = (2 * dircn[2]) / (q + p);
+        return corrected;
     }
 
     public void drive_mecanum(double[] directions)
     {  
         double[] dircns;
         
-//        dircns = detents(directions);
-        dircns = front_side(directions);
-//        directions = orbit_point(dircns);
+        dircns = null_zone(directions, 0.1);
+        if (is_detented)
+        {
+            dircns = detents(dircns);
+        }
+        dircns = front_side(dircns);
+        if (is_orbiting)
+        {
+            dircns = orbit_point(dircns);
+        }
         
         double forward = dircns[0];
         double right = dircns[1];

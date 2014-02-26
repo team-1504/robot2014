@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.Joystick;
  *
  * @author gavaga
  */
-public class ToggleButton 
+public class ToggleButton
 {
     private Joystick joystick;
     private int button_index;
@@ -27,6 +27,13 @@ public class ToggleButton
     public boolean is_rising()
     {
         boolean state = !prev_button_state && joystick.getRawButton(button_index);
+        prev_button_state = joystick.getRawButton(button_index);
+        return state;
+    }
+    
+    public boolean is_falling()
+    {
+        boolean state = prev_button_state && !joystick.getRawButton(button_index);
         prev_button_state = joystick.getRawButton(button_index);
         return state;
     }

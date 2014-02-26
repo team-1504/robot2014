@@ -6,7 +6,6 @@
 
 package com.team1504.robot2014;
 
-import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.can.CANTimeoutException;
@@ -19,8 +18,6 @@ public class Shooter
 {
     private static final double DEFAULT_FIRE_DISTANCE = 0;
     private static final int DEFAULT_RAMP_TIME = 50;
-    private static final double DEFAULT_ANGLE = 0.7;
-    private static final double POT_RANGE = 90;
     
     private boolean is_firing;
     private boolean enabled;
@@ -37,8 +34,8 @@ public class Shooter
     
     private ShooterThread sh_thread;
     
-    private Solenoid solenoid_1 = RobotMain.latch_solenoid_extend;
-    private Solenoid solenoid_2 = RobotMain.latch_solenoid_retract;
+    private Solenoid latch_extend_sol;
+    private Solenoid latch_retract_sol;
     private boolean solenoid = true;
     
     public Shooter()
@@ -55,42 +52,32 @@ public class Shooter
         {
             ex.printStackTrace();
         }
+        latch_extend_sol = new Solenoid(RobotMap.LATCH_EXTEND_PORT);
+        latch_retract_sol = new Solenoid(RobotMap.LATCH_RETRACT_PORT);
+        
 //        pot = new AnalogChannel(RobotMap.SHOOTER_POT_MODULE_NUM);
         stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL;
         
-//        solenoid_set(solenoid);
-        
-        is_firing = false;
-        
-        ramp_time = DEFAULT_RAMP_TIME;
-        
+        is_firing = false;        
+        ramp_time = DEFAULT_RAMP_TIME;        
         sh_thread = new ShooterThread(this);
     }
     
-    private void set_latch(boolean latch_down)
+    public void reset()
     {
-        solenoid_1.set(latch_down);
-        solenoid_2.set(!latch_down);
-    }
-    
-    public void set_max_speed(double speed)
-    {
-        max_speed = speed;
+        enabled = true;
+        
+        sh_thread = new ShooterThread(this);
     }
     
     public void enable()
     {
-        enabled = true;
-        sh_thread.start();   
+        enabled = true;  
     }
     
-    public void re_enable()
+    public void start()
     {
-        enabled = true;
-        
-        System.out.println("Shooter starting");
-        sh_thread = new ShooterThread(this);
-        sh_thread.start();
+        sh_thread.start(); 
     }
     
     public void disable()
@@ -132,6 +119,17 @@ public class Shooter
         is_firing = firing;
     }
     
+    private void set_latch(boolean latch_down)
+    {
+        latch_extend_sol.set(latch_down);
+        latch_retract_sol.set(!latch_down);
+    }
+    
+    public void set_max_speed(double speed)
+    {
+        max_speed = speed;
+    }
+    
     public double get_angle()
     {
         return shooter_angle;
@@ -151,10 +149,12 @@ public class Shooter
     private class ShooterThread extends Thread
     {
         private Shooter sh;
+        
         public ShooterThread(Shooter sh)
         {
             this.sh = sh;
         }
+        
         public void run() 
         {
             boolean just_fired = false;
@@ -192,12 +192,13 @@ public class Shooter
         
         private void update_angle()
         {
-//            double volts = ((pot.getLSBWeight() * 1e-9) * pot.getVoltage()) - (pot.getOffset() * 1e-9);
-//            return (volts + 10) * (POT_RANGE / 20.);
             double pos = 0;
-            try {
+            try 
+            {
                 pos = shooter_jag_2.getPosition();
-            } catch (CANTimeoutException ex) {
+            } 
+            catch (CANTimeoutException ex) 
+            {
                 ex.printStackTrace();
             }
             shooter_angle = pos;
@@ -206,14 +207,14 @@ public class Shooter
         private void reset_shooter()
         {
             long start_time = System.currentTimeMillis();
-            while (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_BASE_VAL)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && Math.abs(start_time - System.currentTimeMillis()) < 1000)
+            while (Math.abs(shooter_angle - RobotMap.SHOOTER_POT_BASE_VAL) > RobotMap.SHOOTER_ANGLE_TOLERANCE && Math.abs(start_time - System.currentTimeMillis()) < 1000)
             {
                 update_angle();
                 if (shooter_angle == 0)
                 {
                     set_shooter_speed(-0.2);
                 }
-                else if (Math.abs(shooter_angle - (RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL)) < 0.1 )
+                else if (Math.abs(shooter_angle - RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL) < 0.1 )
                 {
                     set_shooter_speed(-0.6);
                 }

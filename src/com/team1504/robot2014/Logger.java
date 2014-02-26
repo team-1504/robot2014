@@ -32,11 +32,14 @@ public class Logger
     private boolean is_logging;
     private boolean write_freq;
     
+    private long start_time;
+    
     List frequent_queue;
     List sparse_queue;
     
     public Logger(CANJaguar fl, CANJaguar bl, CANJaguar br, CANJaguar fr, CANJaguar pickup, Shooter sh, Joystick l, Joystick r, Joystick o, Mecanum m, HMC5883L_I2C c)
     {
+        start_time = System.currentTimeMillis();
         this.fl = fl;
         this.bl = bl;
         this.br = br;
@@ -52,7 +55,7 @@ public class Logger
         sparse_queue = new List();
     }
     
-    public void reset_file()
+    public void reset()
     {
         Calendar cal = Calendar.getInstance();
         String f_name;
@@ -72,16 +75,16 @@ public class Logger
     
     public void start()
     {
-        start_logging();
+        enable();
         logger.start();
     }
     
-    public void start_logging()
+    public void enable()
     {
         is_logging = true;
     }
     
-    public void stop_logging()
+    public void disable()
     {
         is_logging = false;
     }
@@ -148,7 +151,7 @@ public class Logger
         
         public void gen_add_freq_line()
         {
-            long start_time = System.currentTimeMillis();
+            double time = (System.currentTimeMillis() - start_time)/1000.0;
             String log_line = "";
             try {
                 log_line = log_line + (-joy_left.getY()) + " " + joy_left.getX() + " " + joy_right.getX() + " ";
@@ -168,7 +171,7 @@ public class Logger
             
 //            log_line = log_line + "Compass: " + comp.getHeading();
             
-            log_line = System.currentTimeMillis() + " " + log_line;
+            log_line = time + " " + log_line;
             frequent_queue.add(log_line);
 //            System.out.println("freq_gen_time: " + (System.currentTimeMillis() - start_time));
         }
