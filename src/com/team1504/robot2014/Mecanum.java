@@ -71,7 +71,7 @@ public class Mecanum
     
     public double[] detents(double[] dircn)
     {
-        double speed = distance(dircn[0], dircn[1]);
+        double speed = Utils.distance(dircn[0], dircn[1]);
         double theta = MathUtils.atan2(dircn[0], dircn[1]);
         double theta_n = ( (int)(8.0 * (theta / (2.0 * Math.PI)) + 0.5)) * (Math.PI / 4.0);
 //        double dx = correct_x(theta) * distance(dircn[1], dircn[0]) * mult_correction;
@@ -152,7 +152,6 @@ public class Mecanum
     public double get_back_right(){return back_right_val;}
     public double get_front_right(){return front_right_val;}
     
-    public static double distance(double x, double y){return Math.sqrt(x*x + y*y);}
     private double correct_x(double theta){return -Math.sin(theta) * (-Math.sin(8*theta) - 0.25 * Math.sin(4*theta));}
     private double correct_y(double theta){return Math.cos(theta) * (-Math.sin(8*theta) - 0.25 * Math.sin(4*theta));}
     
