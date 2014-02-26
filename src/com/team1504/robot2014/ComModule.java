@@ -6,6 +6,7 @@
 
 package com.team1504.robot2014;
 
+import com.sun.squawk.platform.posix.natives.Socket;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -29,17 +30,34 @@ import javax.microedition.io.StreamConnection;
  */
 public class ComModule
 {
+    private static final int[] NULL_PACKET_FORMAT = {2, 1, 0, 1, 2};
+    private static final int[] INFORM_PACKET_FORMAT = {2, 1, 1, 1, 3, 3, 1};
+    private static final int[] CMD_PACKET_FORMAT = {2, 1, 3, 3, 3, 3, 3, 3, 1, 1, 0, 0, 0};
+    private static final int PACKET_ELEMENT_COUNT = 5;
+    private static final int[] INDEXED_TYPE_SIZES = {1, 4, 8, 8};
     private static Vector packet_in_buffer;
     private static Object[] packet_out;
     
     private static boolean is_transmitting;
     private static boolean is_listening;
+    private static boolean is_enabled;
     
     private PiComModule com_thread;
     
-    public ComModule(String address, int port)
+    public ComModule(int port)
     {
-        com_thread = new PiComModule(address, port);
+        com_thread = new PiComModule(port);
+        packet_in_buffer = new Vector();
+    }
+    
+    public void enable()
+    {
+        is_enabled = true;
+    }
+    
+    public void disable()
+    {
+        is_enabled = false;
     }
     
     public void start()
@@ -92,14 +110,12 @@ public class ComModule
     {
         boolean is_init;
         InputStream com_in;
-        BufferedOutputStream com_out;
+        OutputStream com_out;
         
-        String addr;
         int prt;
         
-        public PiComModule(String address, int port)
+        public PiComModule(int port)
         {
-            addr = address;
             prt = port;
             is_init = false;
         }
@@ -108,13 +124,13 @@ public class ComModule
         {
             is_init = true;
             ServerSocketConnection pi_com;
-            StreamConnection com_con;
+            StreamConnection pi_sock;
             try 
             {
-                pi_com = (ServerSocketConnection) Connector.open("socket://" + addr + ":" + prt);
-                com_con = pi_com.acceptAndOpen();
-                com_in = com_con.openInputStream();
-                com_out = com_con.openDataOutputStream();
+                pi_com = (ServerSocketConnection)(Connector.open("socket://" + prt));
+                pi_sock = pi_com.acceptAndOpen();
+                com_in = pi_sock.openDataInputStream();
+                com_out = pi_sock.openDataOutputStream();
             } 
             catch (IOException ex) 
             {
@@ -125,129 +141,181 @@ public class ComModule
         public void run()
         {
             init();
-            String in = "";
-            String out = "";
-            byte[] in_raw = new byte[256];
-            
-            if(is_transmitting)
+            int buf_size = 0;
+            for (int i = 0; i < PACKET_ELEMENT_COUNT; ++i)
             {
-                for (int i = 0; i < packet_out.length; ++i)
-                {
-                    char[] val;
-                    if (packet_out[i] instanceof Double)
-                    {
-                        val = new char[8];
-                        long lng = Double.doubleToLongBits(((Double)packet_out[i]).doubleValue());
-                        for (int j = 0; j < 8; ++j) 
-                        {
-                            val[j] = (char)((lng >> ((7 - j) * 8)) & 0xff);
-                        }
-                        out += val;
-                    }
-                    else if (packet_out[i] instanceof Long)
-                    {
-                        val = new char[8];
-                        long lng = ((Long)packet_out[i]).longValue();
-                        for (int j = 0; j < 8; ++j)
-                        {
-                            val[j] = (char)((lng >> ((7 - j) * 8)) & 0xff);
-                        }
-                    }
-                    else if (packet_out[i] instanceof Integer)
-                    {
-                        val = new char[4];
-                        int igr = ((Integer)packet_out[i]).intValue();
-                        for (int j = 0; j < 4; ++j) 
-                        {
-                            val[j] = (char)((igr >> ((3 - j) * 8)) & 0xff);
-                        }
-                        out += val;
-                    }
-                    else if (packet_out[i] instanceof Boolean)
-                    {
-                        val = new char[1];
-                        val[0] = (char)(((Boolean)packet_out[i]).booleanValue()? 1: 0);
-                        out += val;
-                    }
-                }
-                try {
-                    com_out.write(out.getBytes());
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-                System.out.println("THREAD_COM: packet_sent: " + out);
+                buf_size += INDEXED_TYPE_SIZES[NULL_PACKET_FORMAT[i]];
             }
-            if(is_listening)
+            while (is_enabled)
             {
-                int size = 0;
-                for (int i = 0; i < RobotMap.PACKET_FORMAT.length; ++i)
+                byte[] in_raw = new byte[buf_size];
+                String in = "";
+                String out = "";
+                if(is_transmitting)
                 {
-                    size += RobotMap.INDEXED_TYPE_SIZES[RobotMap.PACKET_FORMAT[i]];
-                }
-                try 
-                {
-                    int n = com_in.read(in_raw);
-                    if (n < 0)
+                    byte[] out_bytes = new byte[buf_size];
+                    int i = 0;
+                    for (int e = 0; e < packet_out.length; ++e)
                     {
-                        System.out.println("THREAD_COM: error reading from stream");
+                        if (packet_out[e] instanceof Double)
+                        {
+                            long lng = Double.doubleToLongBits(((Double)packet_out[e]).doubleValue());
+                            for (int j = 0; j < 8; ++j) 
+                            {
+                                out_bytes[i++] = (byte) (lng >> (8 - i - 1 << 3));
+                            }
+                            System.out.println("Added Double @" + i + ": " + ((Double)packet_out[e]).doubleValue());
+                        }
+                        else if (packet_out[e] instanceof Long)
+                        {
+                            long lng = ((Long)packet_out[e]).longValue();
+                            for (int j = 0; j < 8; ++j)
+                            {
+                                out_bytes[i++] = (byte) (lng >> (8 - i - 1 << 3));
+                            }
+                            System.out.println("Added Long @ " + i + ": " + ((Long)packet_out[e]).longValue());
+                        }
+                        else if (packet_out[e] instanceof Integer)
+                        {
+                            int igr = ((Integer)packet_out[e]).intValue();
+                            for (int j = 0; j < 4; ++j) 
+                            {
+                                out_bytes[i++] = (byte) (igr >> (4 - i - 1 << 3));
+                            }
+                            System.out.println("Added Int @ " + i + ": " + ((Integer)packet_out[e]).intValue());
+                        }
+                        else if (packet_out[e] instanceof Boolean)
+                        {
+                            out_bytes[i++] = (byte)(((Boolean)packet_out[e]).booleanValue()? 1: 0);
+                            System.out.println("Added Boolean @ " + i + ": " + ((Boolean)packet_out[e]).booleanValue());
+                        }
                     }
-                    in = new String(in_raw);
-                    System.out.println("THREAD_COM: raw_packet_get:" + in);
-                } 
-                catch (IOException ex) 
+                    try {
+                        com_out.write(out_bytes, 0, buf_size);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                    System.out.println("THREAD_COM: " + out_bytes.length + " bytes sent; message:" + out_bytes);
+                    
+                }
+                if(is_listening)
                 {
-                    ex.printStackTrace();
+                    int n;
+                    try 
+                    {
+                        n = com_in.read(in_raw);
+                        if (n < 0)
+                        {
+                            System.out.println("THREAD_COM: error reading from stream");
+                        }
+                        String hex = "";
+                        for (int asd = 0; asd < in_raw.length; ++asd)
+                        {
+                            hex += Integer.toHexString(in_raw[asd]);
+                        }
+                        in = new String(in_raw);
+                        System.out.println("Received " + n + " bytes; message: " + hex);
+                    } 
+                    catch (IOException ex) 
+                    {
+                        ex.printStackTrace();
+                    }
+                }
+                if (in.length() > 0)
+                {
+                    Object[] packet_in;
+                    int i = 0;
+                    long timestamp = parse_long(in, i);
+                    i += 8;
+//                    System.out.println(Long.toHexString(timestamp));
+                    int type = parse_int(in, i);
+                    i += 4;
+//                    System.out.println(i);
+                    int[] packet_format = NULL_PACKET_FORMAT;
+
+                    packet_in = new Object[packet_format.length];
+                    packet_in[0] = new Long(timestamp);
+
+                    for (int e = 2; e < packet_format.length; ++e)
+                    {
+                        switch(packet_format[e])
+                        {
+                            case 0:
+                                boolean n = parse_bool(in, i);
+                                packet_in[e] = (n ? Boolean.TRUE : Boolean.FALSE);
+                                ++i;
+                                break;
+                            case 1:
+                                int integer = parse_int(in, i);
+                                packet_in[e] = new Integer(integer);
+                                i += 4;
+                                break;
+                            case 2:
+                                long lng = parse_long(in, i);
+                                packet_in[e] = new Long(lng);
+                                i += 8;
+                                break;
+                            case 3:
+                                double doub = parse_double(in, i);
+                                packet_in[e] = new Double(doub);
+                                i += 8;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    packet_in_buffer.addElement(packet_in);
                 }
             }
-            Object[] packet_in = new Object[RobotMap.PACKET_FORMAT.length];
-            for (int i = 0; i < in.length();)
+        }
+        
+        public boolean parse_bool(String packet, int start_index)
+        {
+            boolean n;
+            n = (packet.charAt(start_index) == 1);
+            System.out.println("Parsed bool: " + n);
+            return n;
+        }
+        
+        public int parse_int(String packet, int start_index)
+        {
+            int integer = 0;
+            byte[] b = packet.substring(start_index, start_index + 4).getBytes();
+            for (int j = 0; j < 4; ++j) 
             {
-                switch(RobotMap.PACKET_FORMAT[i])
-                {
-                    case 0:
-                        boolean n;
-                        n = (in.charAt(i) == 1);
-                        packet_in[i] = (n ? Boolean.TRUE : Boolean.FALSE);
-                        ++i;
-                        break;
-                    case 1:
-                        int integer = 0;
-                        for (int j = 0; j < 4; ++j) 
-                        {
-                            integer |= in.charAt(i + j);
-                            integer = integer << 8;
-                        }
-                        packet_in[i] = new Integer(integer);
-                        i += 4;
-                        break;
-                    case 2:
-                        long lng = 0;
-                        for (int j = 0; j < 8; ++j)
-                        {
-                            lng |= in.charAt(i + j);
-                            lng = lng << 8;
-                        }
-                        packet_in[i] = new Long(lng);
-                        i += 8;
-                        break;
-                    case 3:
-                        double doub = 0;
-                        long l = 0;
-                        for (int j = 0; j < 8; ++j)
-                        {
-                            l |= in.charAt(i + j);
-                            l = l << 8;
-                        }
-                        doub = Double.longBitsToDouble(l);
-                        packet_in[i] = new Double(doub);
-                        i += 8;
-                        break;
-                    default:
-                        break;
-                }
+                integer |= b[j];
+                integer = integer << 8;
             }
-            
-            packet_in_buffer.addElement(packet_in);
+            System.out.println("Parsed int: " + integer);
+            return integer;
+        }
+        
+        public long parse_long(String packet, int start_index)
+        {
+            long lng = 0;
+            byte[] b = packet.substring(start_index, start_index + 8).getBytes();
+            for (int j = 0; j < 8; ++j)
+            {
+                lng |= b[j];
+                lng = lng << 8;
+            }
+            System.out.println("Parsed long: " + lng);
+            return lng;
+        }
+        
+        public double parse_double(String packet, int start_index)
+        {
+            double doub = 0;
+            long l = 0;
+            byte[] b = packet.substring(start_index, start_index + 8).getBytes();
+            for (int j = 0; j < 8; ++j)
+            {
+                l |= b[j];
+                l = l << 8;
+            }
+            doub = Double.longBitsToDouble(l);
+            System.out.println("Parsed double: " + doub);
+            return doub;
         }
     }
 }

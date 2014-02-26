@@ -133,7 +133,7 @@ public class RobotMain extends SimpleRobot
 //        compass = new HMC5883L_I2C(RobotMap.COMPASS_MODULE_ADDRESS);
         compressor = new Compressor(RobotMap.PRESSURE_DIGITAL_INPUT, RobotMap.COMPRESSOR_RELAY_NUM);
         logger = new Logger(front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar, pick_up_jaguar, shooter, driver_left_joystick, driver_right_joystick, operator_joystick, mecanum, compass);
-        pi = new ComModule(RobotMap.RASPBERRY_PI_IP_ADDRESS, 1504);
+        pi = new ComModule(1504);
         
         ds = DriverStation.getInstance();
         ds_LCD = DriverStationLCD.getInstance();
