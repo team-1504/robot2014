@@ -104,7 +104,7 @@ public class Logger
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            log_stream.println("Timestamp Driver_Joy_Y Driver_Joy_X Driver_Joy_W FL_Out BL_Out BR_Out FR_Out FL_Jag_Speed FL_Bus_Voltage FL_Out_Voltage FL_Out_Current FL_Temp BL_Jag_Speed BL_Bus_Voltage BL_Out_Voltage BL_Out_Current BL_Temp BR_Jag_Speed BR_Bus_Voltage BR_Out_Voltage BR_Out_Current BR_Temp FR_Jag_Speed FR_Bus_Voltage FR_Out_Voltage FR_Out_Current FR_Temp");
+            log_stream.println("Timestamp, Driver_Joy_Y, Driver_Joy_X, Driver_Joy_W, FL_Jag_Speed, FL_Bus_Voltage, FL_Out_Voltage, FL_Out_Current, FL_Temp, BL_Jag_Speed, BL_Bus_Voltage, BL_Out_Voltage, BL_Out_Current, BL_Temp, BR_Jag_Speed, BR_Bus_Voltage, BR_Out_Voltage, BR_Out_Current, BR_Temp, FR_Jag_Speed, FR_Bus_Voltage, FR_Out_Voltage, FR_Out_Current, FR_Temp, SH_Speed, SH_Angle");
         }
         
         public void run()
