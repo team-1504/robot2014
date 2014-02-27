@@ -79,7 +79,11 @@ public class RobotMap
     
     public static final String RASPBERRY_PI_IP_ADDRESS = "10.15.4.7";
     
-    public static final int[] PACKET_FORMAT = {2, 3, 3, 3}; //Timestamp(long/int), Delta_x, Delta_y, Delta_theta
+    
+    public static final int[] NULL_PACKET_FORMAT = {2, 1, 0, 1, 2, 3};
+    public static final int[] INFORM_PACKET_FORMAT = {2, 1, 0, 3, 3};
+    public static final int[] CMD_PACKET_FORMAT = {2, 1, 3, 3, 3, 3, 3, 3, 1, 1, 0, 0, 0};
+    public static final int[] CRIO_PACKET_FORMAT = {2, 3, 3, 3};
     public static final int[] INDEXED_TYPE_SIZES = {1, 4, 8, 8};
     
     //Automation Controls
