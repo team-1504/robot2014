@@ -24,7 +24,7 @@ import javax.microedition.io.Connector;
 public class Logger 
 {
     private static LoggingThread logger;
-    private CANJaguar fl, bl, br, fr, pickup;
+    private CANJaguar fl, bl, br, fr, pickup, sh_1, sh_2;
     private Shooter sh;
     private Joystick joy_left, joy_right, joy_op;
     private Mecanum mec;
@@ -44,6 +44,8 @@ public class Logger
         this.bl = bl;
         this.br = br;
         this.fr = fr;
+        this.sh_1 = sh_1;
+        this.sh_2 = sh_2;
         this.pickup = pickup;
         this.sh = sh;
         this.joy_left = l;
@@ -104,7 +106,7 @@ public class Logger
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            log_stream.println("Timestamp Driver_Joy_Y Driver_Joy_X Driver_Joy_W FL_Out BL_Out BR_Out FR_Out FL_Jag_Speed FL_Bus_Voltage FL_Out_Voltage FL_Out_Current FL_Temp BL_Jag_Speed BL_Bus_Voltage BL_Out_Voltage BL_Out_Current BL_Temp BR_Jag_Speed BR_Bus_Voltage BR_Out_Voltage BR_Out_Current BR_Temp FR_Jag_Speed FR_Bus_Voltage FR_Out_Voltage FR_Out_Current FR_Temp");
+            log_stream.println("Timestamp, Driver_Joy_Y, Driver_Joy_X, Driver_Joy_W, FL_Jag_Speed, FL_Bus_Voltage, FL_Out_Voltage, FL_Out_Current, FL_Temp, BL_Jag_Speed, BL_Bus_Voltage, BL_Out_Voltage, BL_Out_Current, BL_Temp, BR_Jag_Speed, BR_Bus_Voltage, BR_Out_Voltage, BR_Out_Current, BR_Temp, FR_Jag_Speed, FR_Bus_Voltage, FR_Out_Voltage, FR_Out_Current, FR_Temp, Pickup_Jag_Speed, Pickup_Bus_Voltage, Pickup_Out_Voltage, Pickup_Out_Current, Pickup_Temp, SH1_Jag_Speed, SH1_Bus_Voltage, SH1_Out_Voltage, SH1_Out_Current, SH1_Temp, SH2_Jag_Speed, SH2_Bus_Voltage, SH2_Out_Voltage, SH2_Out_Current, SH2_Temp, SHmain_Speed, SHmain_Angle");
         }
         
         public void run()
@@ -157,21 +159,24 @@ public class Logger
                 log_line = log_line + (-joy_left.getY()) + " " + joy_left.getX() + " " + joy_right.getX() + " ";
                 log_line = log_line + mec.get_front_left() + " " + mec.get_back_left() + " " + mec.get_back_right() + " " + mec.get_front_right() + " ";
                 
-                log_line = log_line + fl.getSpeed() + " " + fl.getBusVoltage() + " " + fl.getOutputVoltage() + " " + fl.getOutputCurrent() + " " + fl.getTemperature() + " ";
-                log_line = log_line + bl.getSpeed() + " " + bl.getBusVoltage() + " " + bl.getOutputVoltage() + " " + bl.getOutputCurrent() + " " + bl.getTemperature() + " ";
-                log_line = log_line + br.getSpeed() + " " + br.getBusVoltage() + " " + br.getOutputVoltage() + " " + br.getOutputCurrent() + " " + br.getTemperature() + " ";
-                log_line = log_line + fr.getSpeed() + " " + fr.getBusVoltage() + " " + fr.getOutputVoltage() + " " + fr.getOutputCurrent() + " " + fr.getTemperature() + " ";
+                log_line = log_line + fl.getSpeed() + "," + " " + fl.getBusVoltage() + "," + " " + fl.getOutputVoltage() + "," + " " + fl.getOutputCurrent() + "," + " " + fl.getTemperature() + "," + " ";
+                log_line = log_line + bl.getSpeed() + "," + " " + bl.getBusVoltage() + "," + " " + bl.getOutputVoltage() + "," + " " + bl.getOutputCurrent() + "," + " " + bl.getTemperature() + "," + " ";
+                log_line = log_line + br.getSpeed() + "," + " " + br.getBusVoltage() + "," + " " + br.getOutputVoltage() + "," + " " + br.getOutputCurrent() + "," + " " + br.getTemperature() + "," + " ";
+                log_line = log_line + fr.getSpeed() + "," + " " + fr.getBusVoltage() + "," + " " + fr.getOutputVoltage() + "," + " " + fr.getOutputCurrent() + "," + " " + fr.getTemperature() + "," + " ";
+                log_line = log_line + pickup.getSpeed() + "," + " " + pickup.getBusVoltage() + "," + " " + pickup.getOutputVoltage() + "," + " " + pickup.getOutputCurrent() + "," + " " + pickup.getTemperature() + "," + " ";
+                log_line = log_line + sh_1.getSpeed() + "," + " " + sh_1.getBusVoltage() + "," + " " + sh_1.getOutputVoltage() + "," + " " + sh_1.getOutputCurrent() + "," + " " + sh_1.getTemperature() + "," + " ";
+                log_line = log_line + sh_2.getSpeed() + "," + " " + sh_2.getBusVoltage() + "," + " " + sh_2.getOutputVoltage() + "," + " " + sh_2.getOutputCurrent() + "," + " " + sh_2.getTemperature() + "," + " ";
 
 //                log_line = log_line + pickup.getSpeed() + " ";
             } catch (CANTimeoutException ex) {
                 ex.printStackTrace();
             }
 
-            log_line = log_line + sh.get_shooter_speed() + " " + sh.get_angle();
+            log_line = log_line + sh.get_shooter_speed() + "," + " " + sh.get_angle();
             
 //            log_line = log_line + "Compass: " + comp.getHeading();
             
-            log_line = time + " " + log_line;
+            log_line = time + "," + " " + log_line;
             frequent_queue.add(log_line);
 //            System.out.println("freq_gen_time: " + (System.currentTimeMillis() - start_time));
         }

@@ -12,6 +12,8 @@ package com.team1504.robot2014;
  */
 public class Utils 
 {
+    
+    
     public static String[] split(String str, char split)
     {
         String copy = str;
@@ -40,4 +42,5 @@ public class Utils
         }
         return Double.longBitsToDouble(thing);
     }
+    public static double distance(double x, double y){return Math.sqrt(x*x + y*y);}
 }
