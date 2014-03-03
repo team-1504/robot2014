@@ -117,14 +117,14 @@ public class ComModule
             StreamConnection pi_sock;
             try 
             {
-                pi_com = (ServerSocketConnection) Connector.open("socket://" + prt);
+                pi_com = (ServerSocketConnection) Connector.open("socket://1189");
                 pi_sock = pi_com.acceptAndOpen();
                 com_in = pi_sock.openDataInputStream();
                 com_out = pi_sock.openOutputStream();
             } 
             catch (IOException ex) 
             {
-                ex.printStackTrace();
+                com_thread = new PiComModule(prt);
             }
         }
         
@@ -184,6 +184,8 @@ public class ComModule
                         com_out.write(out_bytes, 0, buf_size);
                     } catch (IOException ex) {
                         ex.printStackTrace();
+                        com_thread = new PiComModule(prt);
+                        break;
                     }
 //                    System.out.print("THREAD_COM: " + out_bytes.length + " bytes sent; message:");
                     for (int n = 0; n < out_bytes.length; ++n)
@@ -209,6 +211,8 @@ public class ComModule
                     catch (IOException ex) 
                     {
                         ex.printStackTrace();
+                        com_thread = new PiComModule(prt);
+                        break;
                     }
 //                    System.out.println(Long.toHexString(timestamp));
 //                    int type = parse_int(in, i);
@@ -235,6 +239,9 @@ public class ComModule
                                 catch (IOException ex) 
                                 {
                                     ex.printStackTrace();
+                                    com_thread = new PiComModule(prt);
+                                    
+                                    break;
                                 }
                                 packet_in[e] = (n ? Boolean.TRUE : Boolean.FALSE);
                                 ++i;
@@ -246,6 +253,8 @@ public class ComModule
 //                                    System.out.println("Integer: " + integer);
                                 } catch (IOException ex) {
                                     ex.printStackTrace();
+                                    com_thread = new PiComModule(prt);
+                                    break;
                                 }
                                 packet_in[e] = new Integer(integer);
                                 i += 4;
@@ -257,6 +266,8 @@ public class ComModule
 //                                    System.out.println("Long: " + lng);
                                 } catch (IOException ex) {
                                     ex.printStackTrace();
+                                    com_thread = new PiComModule(prt);
+                                    break;
                                 }
                                 packet_in[e] = new Long(lng);
                                 i += 8;
@@ -268,6 +279,8 @@ public class ComModule
 //                                    System.out.println("Double: " + doub);
                                 } catch (IOException ex) {
                                     ex.printStackTrace();
+                                    com_thread = new PiComModule(prt);
+                                    break;
                                 }
                                 packet_in[e] = new Double(doub);
                                 i += 8;
@@ -314,7 +327,7 @@ public class ComModule
 //            {
 //                System.out.printf("%x", b[i]);
 //            }
-//            System.out.println();
+            System.out.println();
             for (int j = 0; j < 8; ++j)
             {
                 lng |= b[j];
@@ -339,6 +352,4 @@ public class ComModule
             return doub;
         }
     }
-    
-  
 }
