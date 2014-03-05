@@ -22,6 +22,11 @@ public class Mecanum
     
     private boolean is_detented;
     private boolean is_orbiting;
+    private boolean is_field_independent;
+    
+    private double heading_lock;
+    private double current_heading;
+    private double P;
     
     private double mult_correction;
     private double rotation_offset;
@@ -31,15 +36,25 @@ public class Mecanum
     {
         is_detented = true;
         is_orbiting = true;
-        mult_correction = 0.25;
+        set_multiplicative_correction(0.25);
     }
     
-    public void is_orbiting(boolean orb)
+    public void orbiting(boolean orb)
     {
         is_orbiting = orb;
     }
     
-    public void is_detented(boolean det)
+    public void field_independent(boolean fi)
+    {
+        is_field_independent = fi;
+    }
+    
+    public boolean is_field_independent()
+    {
+        return is_field_independent;
+    }
+    
+    public void detented(boolean det)
     {
         is_detented = det;
     }
@@ -54,9 +69,24 @@ public class Mecanum
         orbit_offset = center;
     }
     
-    public void set_multiplicative_correction(double mult_correction)
+    public void set_lock_val(double heading)
     {
-        this.mult_correction = mult_correction;
+        heading_lock = heading;
+    }
+    
+    public void update_heading(double head)
+    {
+        current_heading = head;
+    }
+    
+    public void set_lock_adjust_P(double p)
+    {
+        P = p;
+    }
+    
+    public void set_multiplicative_correction(double mult_correct)
+    {
+        this.mult_correction = mult_correct;
     }
     
     public double[] null_zone(double[] dircn, double size)
@@ -71,22 +101,22 @@ public class Mecanum
     
     public double[] detents(double[] dircn)
     {
-        double speed = Utils.distance(dircn[0], dircn[1]);
+//        double speed = Utils.distance(dircn[0], dircn[1]);
         double theta = MathUtils.atan2(dircn[0], dircn[1]);
-        double theta_n = ( (int)(8.0 * (theta / (2.0 * Math.PI)) + 0.5)) * (Math.PI / 4.0);
-//        double dx = correct_x(theta) * distance(dircn[1], dircn[0]) * mult_correction;
-//        double dy = correct_y(theta) * distance(dircn[1], dircn[0]) * mult_correction;
+//        double theta_n = ( (int)(8.0 * (theta / (2.0 * Math.PI)) + 0.5)) * (Math.PI / 4.0);
+        double dx = correct_x(theta) * Utils.distance(dircn[1], dircn[0]) * mult_correction;
+        double dy = correct_y(theta) * Utils.distance(dircn[1], dircn[0]) * mult_correction;
 //        
         double[] detented = new double[3];
         
-//        detented[0] = MathUtils.pow(dircn[0], 3) + dy;
-//        detented[1] = MathUtils.pow(dircn[1], 3) + dx;
-//        detented[2] = dircn[2];
-        detented[0] = speed * Math.sin(theta_n);
-        detented[1] = speed * Math.cos(theta_n);
+        detented[0] = /*MathUtils.pow(*/dircn[0]/*, 3)*/ + dy;
+        detented[1] = /*MathUtils.pow(*/dircn[1]/*, 3)*/ + dx;
         detented[2] = dircn[2];
+//        detented[0] = speed * Math.sin(theta_n);
+//        detented[1] = speed * Math.cos(theta_n);
+//        detented[2] = dircn[2];
         
-        System.out.println("detented vals: " + dircn[0] + " " + dircn[1]);
+//        System.out.println("detented vals: " + dircn[0] + " " + dircn[1]);
         
         return detented;
     }
@@ -118,6 +148,24 @@ public class Mecanum
         corrected[2] = (2 * dircn[2]) / (q + p);
         return corrected;
     }
+    
+    public double[] direction_lock(double[] dircns)
+    {
+        double[] directions = new double[3];
+        heading_lock = ((int)(current_heading / (Math.PI / 2.0))) * (Math.PI / 2.0);
+
+        directions[0] = dircns[0];
+        directions[1] = dircns[1];
+        
+        double error = current_heading - heading_lock;
+        if (error > Math.PI)
+        {
+            error = error - (2.0*Math.PI);
+        }
+        directions[2] = (-error / Math.PI) * P;
+        
+        return directions;
+    }
 
     public void drive_mecanum(double[] directions)
     {  
@@ -132,6 +180,10 @@ public class Mecanum
         if (is_orbiting)
         {
             dircns = orbit_point(dircns);
+        }
+        if (is_field_independent)
+        {
+            dircns = direction_lock(dircns);
         }
         
         double forward = dircns[0];

@@ -38,6 +38,8 @@ public class RobotMap
     public static final int SHOOTER_POT_MODULE_NUM = 5;
     public static final int SHOOTER_TOSS_BUTTON = 2;
     
+    public static final int SHOOTER_MANUAL_BUTTON = 12;
+    
     public static final int LATCH_EXTEND_PORT = 7;
     public static final int LATCH_RETRACT_PORT = 5;
     

@@ -30,11 +30,12 @@ public class RobotMain extends SimpleRobot
     private static Mecanum mecanum;
     private static CANJaguar front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar; 
     private static Joystick driver_left_joystick, driver_right_joystick, operator_joystick;
-    private static ToggleButton hat_forward, hat_left, hat_right, hat_back, orbit_reset;
+    private static ToggleButton orbit_reset, turn_lock;
     
     //Shooter
     private static Shooter shooter;
     private static ToggleButton fire_button;
+    private static ToggleButton manual_button;
     
     public static Solenoid latch_solenoid_extend;
     public static Solenoid latch_solenoid_retract;
@@ -59,7 +60,6 @@ public class RobotMain extends SimpleRobot
     private static DriverStationLCD ds_LCD;
     
     //Misc
-    private static ComModule pi;
     private static HMC5883L_I2C compass;
     private static Compressor compressor;
     
@@ -113,11 +113,8 @@ public class RobotMain extends SimpleRobot
         }        
         
         mecanum = new Mecanum();
-        hat_forward = new ToggleButton(driver_left_joystick, 12);
-        hat_left = new ToggleButton(driver_left_joystick, 13);
-        hat_back = new ToggleButton(driver_left_joystick, 14);
-        hat_right = new ToggleButton(driver_left_joystick, 15);
         orbit_reset = new ToggleButton(driver_left_joystick, 10);
+        turn_lock = new ToggleButton(driver_right_joystick, 1);
         
         pick_up = new PickUp();
         pickup_solenoid_extend = new Solenoid(RobotMap.PICKUP_EXTEND_PORT);
@@ -125,6 +122,7 @@ public class RobotMain extends SimpleRobot
         
         shooter = new Shooter();
         fire_button = new ToggleButton(operator_joystick, 1);
+        manual_button = new ToggleButton(operator_joystick, RobotMap.SHOOTER_MANUAL_BUTTON);
            
         
         photon_cannon = new Relay(RobotMap.PHOTON_CANNON_PORT, Relay.Direction.kForward);
@@ -133,7 +131,6 @@ public class RobotMain extends SimpleRobot
 //        compass = new HMC5883L_I2C(RobotMap.COMPASS_MODULE_ADDRESS);
         compressor = new Compressor(RobotMap.PRESSURE_DIGITAL_INPUT, RobotMap.COMPRESSOR_RELAY_NUM);
         logger = new Logger(front_left_jaguar, back_left_jaguar, back_right_jaguar, front_right_jaguar, pick_up_jaguar, shooter, driver_left_joystick, driver_right_joystick, operator_joystick, mecanum, compass);
-        pi = new ComModule(1504);
         
         ds = DriverStation.getInstance();
         ds_LCD = DriverStationLCD.getInstance();
@@ -272,54 +269,40 @@ public class RobotMain extends SimpleRobot
         shooter.enable();
         shooter.start();
         
-        pi.start();
+        double compass_offset = 0;
+        double lock_press_time = 0;
+        boolean has_turned = true;
         
-        start_time = System.currentTimeMillis();
         boolean photon_cannon_state = false;
         boolean has_reset = true;
         
-//        double throttle;
+        double throttle;
         
         double[] center_pt = new double[2];
         
-        long pick_up_extend_time = System.currentTimeMillis();
-        long last_time = System.currentTimeMillis();
+        start_time = System.currentTimeMillis();
+        long pick_up_extend_time = start_time;
+        long last_time = start_time;
+        
         
         while(isOperatorControl() && isEnabled())
         {
-            System.out.println("Loop Time: " + (System.currentTimeMillis() - last_time));
-            last_time = System.currentTimeMillis();
-            //Com Debugging
-//            Object[] packet = new Object[1];
-//            packet[0] = new Long(System.currentTimeMillis() - start_time);
-//            
-//            pi.update_out_packet(packet);
+//            System.out.println("Loop Time: " + (System.currentTimeMillis() - last_time));
+
+            if (manual_button.is_rising())
+            {
+                shooter.enable_manual();
+            }
+            else if (operator_joystick.getRawButton(RobotMap.SHOOTER_MANUAL_BUTTON))
+            {
+                shooter.write_manual(-operator_joystick.getY());
+            }
+            else if (manual_button.is_falling())
+            {
+                shooter.disable_manual();
+            }
             
-            //Pickup Debugging            
-//            double pickup_val = 0;
-//            
-//            pickup_val = operator_joystick.getY() * -1;
-//            if (Math.abs(pickup_val) < 0.1) pickup_val = 0;
-//            double throttle = (operator_joystick.getThrottle() + 1)*0.5;
-//            pickup_val *= throttle;
-//            
             //Mecanum Drive Handling
-            if (hat_forward.is_rising())
-            {
-                center_pt[1] += 1;
-            }
-            if (hat_back.is_rising())
-            {
-                center_pt[1] -= 1;
-            }
-            if (hat_left.is_rising())
-            {
-                center_pt[0] -= 1;
-            }
-            if (hat_right.is_rising())
-            {
-                center_pt[0] += 1;
-            }
             if (orbit_reset.is_rising())
             {
                 center_pt[0] = 0;
@@ -330,40 +313,59 @@ public class RobotMain extends SimpleRobot
             if (driver_right_joystick.getRawButton(RobotMap.ROTATION_BUTTON_DEFAULT))
             {
                 mecanum.set_front(180);
+                compass_offset = Math.PI;
             }
             else if (driver_right_joystick.getRawButton(RobotMap.ROTATION_BUTTON_90))
             {
                 mecanum.set_front(270);
+                compass_offset = (3.0/2.0) * Math.PI;
             }        
             else if (driver_right_joystick.getRawButton(RobotMap.ROTATION_BUTTON_180))
             {
                 mecanum.set_front(0);
+                compass_offset = 0;
             }
             else if (driver_right_joystick.getRawButton(RobotMap.ROTATION_BUTTON_270))
             {
                 mecanum.set_front(90);
+                compass_offset = Math.PI / 2.0;
             }
             
-//            throttle = ((-operator_joystick.getThrottle() + 1.0) / 4.0) + 0.5;
-//            shooter.set_max_speed(throttle);
-//            System.out.println("Throttle: " + throttle);
-                   
+            throttle = ((-operator_joystick.getThrottle() + 1.0) / 4.0) + 0.5;
+            shooter.set_max_speed(throttle);
+            System.out.println("Throttle: " + throttle);
+            
+            if (driver_right_joystick.getTrigger())
+            {
+                mecanum.field_independent(true);
+            }
+            else
+            {
+                mecanum.field_independent(false);
+            }
             
             double[] commands = new double[3];
+            if (mecanum.is_field_independent())
+            {
+                mecanum.set_front((compass_offset + compass.getHeading() - RobotMap.COMPASS_ANGLE_REFERENCE)%(2*Math.PI));
+                if (Math.abs(driver_right_joystick.getX()) > 0.2)
+                {
+                    commands[2] = driver_right_joystick.getX();
+                }
+                else if (Math.abs(driver_right_joystick.getX()) < 0.2)
+                {
+                    mecanum.update_heading(compass.getHeading());
+                }
+            }
             if (is_automated)
             {
-                Object[] command_packet = pi.get_packet_in();
-                for (int i = 0; i < 3; ++i)
-                {
-                    commands[i] = ((Double)command_packet[i]).doubleValue();
-                }
-                mecanum.drive_mecanum(commands);
+                
             }
             else
             {
                 commands[0] = driver_left_joystick.getTrigger()? -1*driver_left_joystick.getY(): -0.65*driver_left_joystick.getY();
                 commands[1] = driver_left_joystick.getTrigger()? driver_left_joystick.getX(): 0.65 * driver_left_joystick.getX();
-                commands[2] = driver_left_joystick.getTrigger()? -1*driver_right_joystick.getX(): -0.5 * driver_right_joystick.getX();
+                commands[2] = driver_right_joystick.getTrigger()? commands[2]: driver_left_joystick.getTrigger()? -1*driver_right_joystick.getX(): -0.5 * driver_right_joystick.getX();
                 mecanum.drive_mecanum(commands);
             }
             
@@ -443,16 +445,6 @@ public class RobotMain extends SimpleRobot
                 has_reset = false;
             }
             
-//            Object[] packet_out = new Object[5];
-//            packet_out[0] = new Long(System.currentTimeMillis());
-//            packet_out[1] = new Double();
-//            packet_out[2] = null;
-//            packet_out[3] = new Double(compass.getHeading());
-//            packet_out[4] = new Double(0);
-//            
-//            
-//            pi.update_out_packet(packet_out);
-            
             try
             {
                 //Set Jaguars
@@ -465,10 +457,10 @@ public class RobotMain extends SimpleRobot
                 
                 //Write to Driver's Station
                 ds_LCD.clear();
-                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Bat Voltage: " + front_left_jaguar.getBusVoltage());
-                ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Shooter Pot: " + shooter.get_angle());
-//                ds_LCD.println(DriverStationLCD.Line.kUser3, 1, "Shooter Throttle: " + throttle);
-                
+                ds_LCD.println(DriverStationLCD.Line.kUser1, 1, "Battery Voltage: " + front_left_jaguar.getBusVoltage());
+                ds_LCD.println(DriverStationLCD.Line.kUser3, 1, "Shooter Angle: " + shooter.get_angle());
+                ds_LCD.println(DriverStationLCD.Line.kUser2, 1, "Loop Time: " + (System.currentTimeMillis() - last_time));
+                last_time = System.currentTimeMillis();
                 ds_LCD.updateLCD();
             } 
             catch (CANTimeoutException ex)

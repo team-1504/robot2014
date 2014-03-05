@@ -21,6 +21,7 @@ public class Shooter
     
     private boolean is_firing;
     private boolean enabled;
+    private boolean manual;
     
     private int ramp_time;
     
@@ -31,6 +32,7 @@ public class Shooter
     private CANJaguar shooter_jag_2;
     
     private double shooter_angle;
+    private double manual_value;
     
     private ShooterThread sh_thread;
     
@@ -59,6 +61,7 @@ public class Shooter
         stop_angle = RobotMap.SHOOTER_POT_RELEASE_VAL_GOAL;
         
         is_firing = false;        
+        manual = false;
         ramp_time = DEFAULT_RAMP_TIME;        
         sh_thread = new ShooterThread(this);
     }
@@ -93,6 +96,23 @@ public class Shooter
     public boolean is_firing()
     {
         return is_firing;
+    }
+    
+    public void enable_manual()
+    {
+        is_firing = false;
+        manual = true;
+        set_latch(false);
+    }
+    
+    public void disable_manual()
+    {
+        manual = false;
+    }
+    
+    public void write_manual(double value)
+    {
+        manual_value = value;
     }
     
     public void fire(boolean firing, int type)
@@ -155,7 +175,7 @@ public class Shooter
             this.sh = sh;
         }
         
-        public void run() 
+        public void run()
         {
             boolean just_fired = false;
             while(enabled)
@@ -165,6 +185,11 @@ public class Shooter
 
                 double value = 0;
                 update_angle();
+                
+                if (manual)
+                {
+                    set_shooter_speed(manual_value);
+                }
                 
                 while((Math.abs(shooter_angle - (stop_angle)) > RobotMap.SHOOTER_ANGLE_TOLERANCE && shooter_angle > stop_angle) && sh.is_firing())
                 {
