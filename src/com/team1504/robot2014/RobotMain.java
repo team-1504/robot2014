@@ -433,6 +433,7 @@ public class RobotMain extends SimpleRobot
                 pick_up.set_position(RobotMap.PICK_UP_UP);
                 pickup_solenoid_extend.set(pick_up.get_position());
                 pickup_solenoid_retract.set(!pick_up.get_position());
+                compressor.start();
             }
             else if (operator_joystick.getRawButton(RobotMap.PICKUP_SOLENOID_BUTTON_EXTEND))
             {
@@ -443,6 +444,7 @@ public class RobotMain extends SimpleRobot
                 pick_up.set_raw_speed(1.0);
                 pick_up_extend_time = System.currentTimeMillis();
                 has_reset = false;
+                compressor.stop();
             }
             
             try
