@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.can.CANTimeoutException;
+import edu.wpi.first.wpilibj.networktables.NetworkTable;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -65,6 +66,7 @@ public class RobotMain extends SimpleRobot
     
     //Automation
     private static boolean is_automated;
+    NetworkTable test_table, inform_table, robot_table;
     
     public RobotMain()
     {
@@ -138,6 +140,10 @@ public class RobotMain extends SimpleRobot
         shooter.enable();
         compressor.start();
         is_automated = false;
+        
+        inform_table = NetworkTable.getTable("inform_table");
+        robot_table = NetworkTable.getTable("robot_table");
+        test_table = NetworkTable.getTable("datatable");
     }
     
     /**
@@ -145,6 +151,7 @@ public class RobotMain extends SimpleRobot
      */
     public void autonomous() 
     {
+        robot_table.putNumber("game_mode", 0);
         shooter.reset();
         shooter.enable();
         shooter.start();
@@ -261,6 +268,7 @@ public class RobotMain extends SimpleRobot
      */
     public void operatorControl() 
     {
+        robot_table.putNumber("game_mode", 1);
         logger.reset();
         logger.enable();
         logger.start();
@@ -289,6 +297,9 @@ public class RobotMain extends SimpleRobot
         {
 //            System.out.println("Loop Time: " + (System.currentTimeMillis() - last_time));
 
+            test_table.putNumber("X", 1504);
+            test_table.putNumber("Y", 500);
+            
             if (manual_button.is_rising())
             {
                 shooter.enable_manual();
